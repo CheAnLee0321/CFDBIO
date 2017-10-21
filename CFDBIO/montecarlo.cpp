@@ -1432,3 +1432,78 @@ void MonteCarlo::FirstOrderRelease_FiniteR(int i, int j){
     ReceptorArray[pointer].B=C_B;
     ReceptorArray[pointer].AB=ReceptorArray[pointer].AB-UnitCon;
 }
+
+double MonteCarlo::factorial(double n){
+
+    if (n<=1){
+        return 1;
+    }else{
+        return n*factorial(n-1);;
+    }
+}
+
+double MonteCarlo::C_comb(double m, double n){
+
+    double A = factorial(m);
+    double B = factorial(n);
+    double C = factorial(m-n);
+
+    return A/B/C;
+}
+
+double MonteCarlo::P_binominal(double m, double n, double p){
+
+    return C_comb(m,n)*pow(p,n)*pow(1-p,m-n);
+}
+
+double MonteCarlo::H_comb(double m, double n){
+
+    return C_comb(m+n-1,n);
+}
+
+void MonteCarlo::distribution(){
+    fstream output1,output2;
+
+    output1.open("test1.txt", fstream::out | fstream::trunc);
+    output2.open("test2.txt", fstream::out | fstream::trunc);
+
+    double p=0.2;
+    double total_nanowire_number=100;
+    double total_biomolecues=50;
+
+    output1 << "N" <<'\t'<< "P_bi" <<'\t'<<endl;
+    output2 << "N" <<'\t'<< "P_wire" <<'\t'<<endl;
+
+
+    double check1=0;
+    for(int i=1;i<total_biomolecues+1;i++){
+
+        check1=check1+P_binominal(total_biomolecues,i,p);
+        output1 <<scientific<< i <<'\t'<<P_binominal(total_biomolecues,i,p)<<endl;
+    }
+    cout << "Total Prob1="<<check1<<endl;
+
+    double *sum= new double [(int)total_biomolecues];
+
+    for(int i=1;i<total_biomolecues+1;i++){ // captured biomolecules
+
+        for(int j=1;j<i+1;j++){ // triggered nanowires
+
+
+            sum[j]=sum[j]+P_binominal(total_biomolecues,i,p)*C_comb(total_nanowire_number,j)*H_comb(j,i-j)/H_comb(total_nanowire_number,i);
+        }
+    }
+
+    double check2=0;
+    for(int i=1;i<total_biomolecues+1;i++){
+        check2=check2+sum[i];
+        output2 << i << "\t" << sum[i]<<endl;
+
+    }
+    cout << "Total Prob2="<<check2<<endl;
+
+    cout << H_comb(10,10)<<endl;;
+
+    output1.close();
+    output2.close();
+}

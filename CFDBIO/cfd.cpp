@@ -4,3 +4,10 @@
 #include <complex>
 
 using namespace std;
+
+
+CFD::CFD(){
+}
+
+CFD::~CFD(){
+}

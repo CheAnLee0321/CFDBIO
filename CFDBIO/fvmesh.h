@@ -23,9 +23,12 @@ public:
     void DDmodelStructurePatameterSet2D(int Struct);
     void DDmodelStructurePatameterSet3D(int Struct);
 
+    void CDStructurePatameterSet2D();
+
     //2D
     void CFDMeshParameterSet2D();
     void DDmodelMeshParameterSet2D();
+    void CDMeshParameterSet2D();
     void BlockMeshingMesh2D();
 
     //3D

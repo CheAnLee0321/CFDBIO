@@ -50,6 +50,13 @@ public:
     void FirstOrderRelease(int i, int j);
     void FirstOrderRelease_FiniteR(int i, int j);
 
+    double factorial(double n);
+    double C_comb(double m, double n);
+    double P_binominal(double m, double n, double p);
+    double H_comb(double m, double n);
+    void distribution (void);
+
+
 protected:
 
     //*********************************

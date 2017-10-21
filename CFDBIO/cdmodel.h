@@ -3,23 +3,9 @@
 #include "fvmesh.h"
 
 struct electrolyte {
-    double coordX; //coordinate
-    double coordY;
-    double coordZ;
     double k;   // permitivitty
-    double dop; // doping, -Nai Ndi
-    double phi; // potential, Ei
-    double u;   // quasi-fermi level, exp(-Ef/Vt)
-    double v;   //                  , exp(Ef/Vt)
-    double r;   // recombination rate, SRH
-    double rho; // charge density, C/cm3
-    double Crho; // charge density, C/cm3
-    double mun; // mobility, nm^2/v.s
-    double mup;
-    double tau;
-    double Ex;  // electric field
-    double Ey;
-    double Ez;
+    double C_new;
+    double C_old;
     double ui;  //velocity
     double vi;
     double wi;
@@ -43,31 +29,27 @@ public:
     CDmodel();
     ~CDmodel();
 
+    void CDInitialize();
     //Convection Diffusion Eq.
     void CDParameter();
-    void CDParameterSet2D();
-    void CDStructureParameter2D();
     void CDAddReceptors2D();
     void CDInitialGuess2D();
     void CDSolver2D();
     void CDinner2D(int i, int j);
     void CDBoundary2D(int i, int j);
 
-    void CDParameterSet3D();
-    void CDStructureParameter3D();
-    void CDAddReceptors3D();
-    void CDInitialGuess3D();
-    void CDSolver3D();
-    void CDinner3D(int i, int j);
+    //Tool Function
+    void PrintMaterial2D(string path);
+    void PrintReceptor2D(string path);
 
 protected:
 
     Receptor *ReceptorArray;
     Electrolyte *material;
 
-    int TN, DimensionTag, L1;
-    double ElectrodeGap, ElectrodeWidth;;
-    double t, tau, AnalyteRadius_m, AnalyteRadius_nm, eta_m, D;
+    int TN, DimensionTag, L1,frame,frame_step;
+    double ElectrodeGap, ElectrodeWidth;
+    double t, tau, AnalyteRadius_m, AnalyteRadius_nm, eta_m, D,C0;
     double k_forward, k_backward,k_forward1, k_backward1,k_forward2, k_backward2;
     double D_nm;
 

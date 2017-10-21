@@ -74,6 +74,15 @@ void FVMesh::DDmodelStructurePatameterSet2D(int Struct){
     output.close();
 }
 
+void FVMesh::CDStructurePatameterSet2D(){
+
+    cout << "2D CD Simulation."<<endl;
+
+    lx=100*1000;
+    ly=100*1000;
+
+}
+
 void FVMesh::DDmodelStructurePatameterSet3D(int Struct){
 
     StructureFlag=Struct;
@@ -248,6 +257,87 @@ void FVMesh::DDmodelMeshParameterSet2D(){
     */
     for(int i=0;i<My;i++){
         meshy[i]=0.5*(i+1);
+    }
+
+    /*
+    meshx[3]=1e-2;
+    meshx[4]=1e-3;
+
+    meshy[0]=1;
+    meshy[1]=2e-2;
+    meshy[2]=1e-3;
+    */
+
+    //set initial value(minimum)
+    px=py=1;
+
+    // points calculation
+    for(int i=0;i<Mx;i++){
+        px=px+meshx[i]*(xpin[i+1]-xpin[i]);
+    }
+    for(int i=0;i<My;i++){
+        py=py+meshy[i]*(ypin[i+1]-ypin[i]);
+    }
+    // set xyz  point numbers till each block
+    xb=new int [Mx+1];
+    yb=new int [My+1];
+    for(int i=1;i<Mx+1;i++){
+        xb[0]=0;
+        xb[i]=xb[i-1]+(xpin[i]-xpin[i-1])*meshx[i-1];
+    }
+    for(int i=1;i<My+1;i++){
+        yb[0]=0;
+        yb[i]=yb[i-1]+(ypin[i]-ypin[i-1])*meshy[i-1];
+    }
+    L=px*py;
+}
+
+void FVMesh::CDMeshParameterSet2D(){
+
+    //Dimensions number
+    Dimension=2;
+
+    //sensor surface
+    //NWRradiusy=lx/20;
+
+    // xyz block numbers.
+    Mx=1;
+    My=1;
+    // set xy pins
+    xpin=new double [Mx+1];
+    ypin=new double [My+1];
+    for(int i=0;i<Mx+1;i++){
+        xpin[i]=0+lx/Mx*i;
+    }
+    /*
+    xpin[0]=0;
+    xpin[1]=lx/2-NWR-(1000-fmod(NWR,1000));
+    xpin[2]=lx/2+NWR+(1000-fmod(NWR,1000));;
+    xpin[3]=lx;
+    */
+    for(int i=0;i<My+1;i++){
+        ypin[i]=0+ly/My*i;
+    }
+    /*
+    ypin[0]=0;
+    ypin[1]=50;
+    ypin[2]=1000;
+    ypin[3]=200000;
+    */
+    // set xy mesh steps
+    meshx=new double [Mx];
+    meshy=new double [My];
+    // mesh unit = 1/nm = 1/step
+    for(int i=0;i<Mx;i++){
+        meshx[i]=0.001*(i+1);
+    }
+    /*
+    meshx[0]=1e-3;
+    meshx[1]=1e-2;
+    meshx[2]=1e-3;
+    */
+    for(int i=0;i<My;i++){
+        meshy[i]=0.001*(i+1);
     }
 
     /*
