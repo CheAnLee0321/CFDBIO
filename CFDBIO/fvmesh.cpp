@@ -14,7 +14,7 @@ FVMesh::~FVMesh()
 
 }
 
-void FVMesh::DDmodelStructurePatameterSet2D(int Struct){
+void FVMesh::FVMesh_DDmodelStructurePatameterSet2D(int Struct){
 
     StructureFlag=Struct;
 
@@ -74,7 +74,7 @@ void FVMesh::DDmodelStructurePatameterSet2D(int Struct){
     output.close();
 }
 
-void FVMesh::CDStructurePatameterSet2D(){
+void FVMesh::FVMesh_CDStructurePatameterSet2D(){
 
     cout << "2D CD Simulation."<<endl;
 
@@ -83,7 +83,16 @@ void FVMesh::CDStructurePatameterSet2D(){
 
 }
 
-void FVMesh::DDmodelStructurePatameterSet3D(int Struct){
+void FVMesh::FVMesh_CFDStructurePatameterSet2D(){
+
+    cout << "2D CFD Simulation."<<endl;
+
+    lx=400*1000;
+    ly=200*1000;
+
+}
+
+void FVMesh::FVMesh_DDmodelStructurePatameterSet3D(int Struct){
 
     StructureFlag=Struct;
 
@@ -211,7 +220,7 @@ void FVMesh::DDmodelStructurePatameterSet3D(int Struct){
     output.close();
 }
 
-void FVMesh::DDmodelMeshParameterSet2D(){
+void FVMesh::FVMesh_DDmodelMeshParameterSet2D(){
 
     //Dimensions number
     Dimension=2;
@@ -292,7 +301,7 @@ void FVMesh::DDmodelMeshParameterSet2D(){
     L=px*py;
 }
 
-void FVMesh::CDMeshParameterSet2D(){
+void FVMesh::FVMesh_CDMeshParameterSet2D(){
 
     //Dimensions number
     Dimension=2;
@@ -373,12 +382,93 @@ void FVMesh::CDMeshParameterSet2D(){
     L=px*py;
 }
 
-void FVMesh::BlockMeshingMesh2D(){
+void FVMesh::FVMesh_CFDMeshParameterSet2D(){
+
+    //Dimensions number
+    Dimension=2;
+
+    //sensor surface
+    //NWRradiusy=lx/20;
+
+    // xyz block numbers.
+    Mx=1;
+    My=1;
+    // set xy pins
+    xpin=new double [Mx+1];
+    ypin=new double [My+1];
+    for(int i=0;i<Mx+1;i++){
+        xpin[i]=0+lx/Mx*i;
+    }
+    /*
+    xpin[0]=0;
+    xpin[1]=lx/2-NWR-(1000-fmod(NWR,1000));
+    xpin[2]=lx/2+NWR+(1000-fmod(NWR,1000));;
+    xpin[3]=lx;
+    */
+    for(int i=0;i<My+1;i++){
+        ypin[i]=0+ly/My*i;
+    }
+    /*
+    ypin[0]=0;
+    ypin[1]=50;
+    ypin[2]=1000;
+    ypin[3]=200000;
+    */
+    // set xy mesh steps
+    meshx=new double [Mx];
+    meshy=new double [My];
+    // mesh unit = 1/nm = 1/step
+    for(int i=0;i<Mx;i++){
+        meshx[i]=0.001*(i+1);
+    }
+    /*
+    meshx[0]=1e-3;
+    meshx[1]=1e-2;
+    meshx[2]=1e-3;
+    */
+    for(int i=0;i<My;i++){
+        meshy[i]=0.001*(i+1);
+    }
+
+    /*
+    meshx[3]=1e-2;
+    meshx[4]=1e-3;
+
+    meshy[0]=1;
+    meshy[1]=2e-2;
+    meshy[2]=1e-3;
+    */
+
+    //set initial value(minimum)
+    px=py=1;
+
+    // points calculation
+    for(int i=0;i<Mx;i++){
+        px=px+meshx[i]*(xpin[i+1]-xpin[i]);
+    }
+    for(int i=0;i<My;i++){
+        py=py+meshy[i]*(ypin[i+1]-ypin[i]);
+    }
+    // set xyz  point numbers till each block
+    xb=new int [Mx+1];
+    yb=new int [My+1];
+    for(int i=1;i<Mx+1;i++){
+        xb[0]=0;
+        xb[i]=xb[i-1]+(xpin[i]-xpin[i-1])*meshx[i-1];
+    }
+    for(int i=1;i<My+1;i++){
+        yb[0]=0;
+        yb[i]=yb[i-1]+(ypin[i]-ypin[i-1])*meshy[i-1];
+    }
+    L=px*py;
+}
+
+void FVMesh::FVMesh_BlockMeshingMesh2D(){
 
     mesh = new Mesh [L];
 
     //assign all coordinate
-    MeshInitialize();
+    FVMesh_MeshInitialize();
 
     for(int m=0;m<Mx;m++){
 
@@ -405,7 +495,7 @@ void FVMesh::BlockMeshingMesh2D(){
     }
 }
 
-void FVMesh::DDmodelMeshParameterSet3D(){
+void FVMesh::FVMesh_DDmodelMeshParameterSet3D(){
 
     //Dimensions number
     Dimension=3;
@@ -518,11 +608,11 @@ void FVMesh::DDmodelMeshParameterSet3D(){
     L=px*py*pz;
 }
 
-void FVMesh::BlockMeshingMesh3D(){
+void FVMesh::FVMesh_BlockMeshingMesh3D(){
 
     mesh = new Mesh [L];
 
-    MeshInitialize();
+    FVMesh_MeshInitialize();
 
     for(int m=0;m<Mx;m++){
 
@@ -567,7 +657,7 @@ void FVMesh::BlockMeshingMesh3D(){
     }
 }
 
-void FVMesh::MeshInitialize(){
+void FVMesh::FVMesh_MeshInitialize(){
 
     #pragma omp parallel for
     for(int i=0;i<L;i++){
@@ -578,11 +668,9 @@ void FVMesh::MeshInitialize(){
 
 }
 
-void FVMesh::PrintCoordinate2D(string path){
+void FVMesh::FVMesh_PrintCoordinate2D(string path){
 
     //Print Only Coordinate
-
-    path.append(".msh");
 
     fstream output;
 
@@ -604,11 +692,9 @@ void FVMesh::PrintCoordinate2D(string path){
     output.close();
 }
 
-void FVMesh::PrintCoordinate3D(string path){
+void FVMesh::FVMesh_PrintCoordinate3D(string path){
 
     //Print Only Coordinate
-
-    path.append(".msh");
 
     fstream output;
 
@@ -631,7 +717,7 @@ void FVMesh::PrintCoordinate3D(string path){
     output.close();
 }
 
-void FVMesh::PrintMeshParameter2D(){
+void FVMesh::FVMesh_PrintMeshParameter2D(){
 
     fstream output;
     output.open("MeshParameter2D.txt", fstream::out | fstream::app);
@@ -660,8 +746,7 @@ void FVMesh::PrintMeshParameter2D(){
     output.close();
 }
 
-
-void FVMesh::PrintMeshParameter3D(){
+void FVMesh::FVMesh_PrintMeshParameter3D(){
 
     fstream output;
     output.open("MeshParameter3D.txt", fstream::out | fstream::app);

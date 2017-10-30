@@ -18,7 +18,7 @@ CDmodel::~CDmodel()
 
 }
 
-void CDmodel::CDParameter(){
+void CDmodel::CD_Parameter(){
 
     t=50;       //time, s.
     tau=1e-2;  //time step0
@@ -91,7 +91,7 @@ void CDmodel::CDParameter(){
 }
 
 
-void CDmodel::CDAddReceptors2D(){
+void CDmodel::CD_AddReceptors2D(){
 
     ReceptorArray = new Receptor[px];
 
@@ -108,23 +108,20 @@ void CDmodel::CDAddReceptors2D(){
     }
 }
 
-void CDmodel::CDInitialize(){
+void CDmodel::CD_Initialize(){
 
     #pragma omp parallel for
     for(int i=0;i<L;i++){
-        material[i].k=0;
-        material[i].C_new=0;
-        material[i].C_old=0;
-        material[i].ui=0;
-        material[i].vi=0;
-        material[i].flag=0;
+        CDmaterial[i].C_new=0;
+        CDmaterial[i].C_old=0;
+        CDmaterial[i].flag=0;
     }
 }
 
-void CDmodel::CDInitialGuess2D(){
+void CDmodel::CD_InitialGuess2D(){
 
-    material=new Electrolyte [L];
-    CDInitialize();
+    CDmaterial=new CDElectrolyte [L];
+    CD_Initialize();
 
     #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -136,13 +133,13 @@ void CDmodel::CDInitialGuess2D(){
             // this can be 3D concentration (volume concentration)
             // the value 1 can has any unit. uM nM pM fM ...
 
-            material[pointer].C_new=C0;
-            material[pointer].C_old=C0;
+            CDmaterial[pointer].C_new=C0;
+            CDmaterial[pointer].C_old=C0;
         }
     }
 }
 
-void CDmodel::CDSolver2D(){
+void CDmodel::CD_Solver2D(){
 
     //using old calculate new, and then compare R, finally update to old.
 
@@ -154,7 +151,7 @@ void CDmodel::CDSolver2D(){
 
                 //phi is new concentration
                 //calculate concentration in next time step
-                CDinner2D(i,j);
+                CD_inner2D(i,j);
             }
         }
 
@@ -165,7 +162,7 @@ void CDmodel::CDSolver2D(){
                 int pointer = (px)*(j) + (i);
 
                 //copy new to old
-                material[pointer].C_old = material[pointer].C_new;
+                CDmaterial[pointer].C_old = CDmaterial[pointer].C_new;
             }
         }
 
@@ -177,11 +174,11 @@ void CDmodel::CDSolver2D(){
             cerr <<"T="<<j*tau<<endl;
             name1<<"Concentration T="<<j*tau<<".txt";
             name11=name1.str();
-            PrintMaterial2D(name11.c_str());
+            CD_PrintMaterial2D(name11.c_str());
 
             name2<<"Receptor T="<<j*tau<<".txt";
             name22=name2.str();
-            PrintReceptor2D(name22.c_str());
+            CD_PrintReceptor2D(name22.c_str());
 
         }
         /*
@@ -189,7 +186,7 @@ void CDmodel::CDSolver2D(){
     }
 }
 
-void CDmodel::CDinner2D(int i, int j){
+void CDmodel::CD_inner2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
     int pointer_ip =   (px)*(j) + (i+1);
@@ -204,7 +201,7 @@ void CDmodel::CDinner2D(int i, int j){
     double ystep_p=abs(mesh[pointer_jp].coordY-mesh[pointer].coordY);
     double ystep_n=abs(mesh[pointer_jn].coordY-mesh[pointer].coordY);
 
-    double Rp=0, R=0;
+    //double Rp=0, R=0;
 
     double x1=1,x2=1,x3=1,x4=1;
     double y1=1,y2=1,y3=1,y4=1;
@@ -232,7 +229,7 @@ void CDmodel::CDinner2D(int i, int j){
 
         //Rp = -k1[A][B]+k-1[AB]
         //R=Rp*Area/Volume
-        Rp=(-1)*k_forward*material[pointer].C_old*ReceptorArray[i].B+k_backward*ReceptorArray[i].AB; //surface density per second
+        //Rp=(-1)*k_forward*CDmaterial[pointer].C_old*ReceptorArray[i].B+k_backward*ReceptorArray[i].AB; //surface density per second
         //R=(Rp)*deltax/deltax*deltay; //volume density per second
     }
     if (j==py-1){
@@ -246,15 +243,15 @@ void CDmodel::CDinner2D(int i, int j){
     double Area=deltax*deltay;
 
     //F's unit is mole per second (because using FVM)
-    double F =x1*(-1)*material[pointer].ui*Area*(material[pointer_ip].C_old-material[pointer].C_old)/xstep_p+x2*material[pointer].ui*Area*(material[pointer_in].C_old-material[pointer].C_old)/xstep_n
-             +x3*D_nm*(material[pointer_ip].C_old-material[pointer].C_old)*deltay/xstep_p-x4*D_nm*(material[pointer].C_old-material[pointer_in].C_old)*deltay/xstep_n
-             +y1*(-1)*material[pointer].vi*Area*(material[pointer_jp].C_old-material[pointer].C_old)/ystep_p+y2*material[pointer].vi*Area*(material[pointer_jn].C_old-material[pointer].C_old)/ystep_n
-             +y3*D_nm*(material[pointer_jp].C_old-material[pointer].C_old)*deltax/ystep_p-y4*D_nm*(material[pointer].C_old-material[pointer_jn].C_old)*deltax/ystep_n;
+    double F =x1*(-1)*CFDmaterial[pointer].ui*Area*(CDmaterial[pointer_ip].C_old-CDmaterial[pointer].C_old)/xstep_p+x2*CFDmaterial[pointer].ui*Area*(CDmaterial[pointer_in].C_old-CDmaterial[pointer].C_old)/xstep_n
+             +x3*D_nm*(CDmaterial[pointer_ip].C_old-CDmaterial[pointer].C_old)*deltay/xstep_p-x4*D_nm*(CDmaterial[pointer].C_old-CDmaterial[pointer_in].C_old)*deltay/xstep_n
+             +y1*(-1)*CFDmaterial[pointer].vi*Area*(CDmaterial[pointer_jp].C_old-CDmaterial[pointer].C_old)/ystep_p+y2*CFDmaterial[pointer].vi*Area*(CDmaterial[pointer_jn].C_old-CDmaterial[pointer].C_old)/ystep_n
+             +y3*D_nm*(CDmaterial[pointer_jp].C_old-CDmaterial[pointer].C_old)*deltax/ystep_p-y4*D_nm*(CDmaterial[pointer].C_old-CDmaterial[pointer_jn].C_old)*deltax/ystep_n;
 
     //A is volume density
-    double A = material[pointer].C_old+tau*(F)/Area;
+    double A = CDmaterial[pointer].C_old+tau*(F)/Area;
 
-    material[pointer].C_new=A;
+    CDmaterial[pointer].C_new=A;
 
     if(A<0){
         cout << "Time resolution insufficient."<<endl;
@@ -262,10 +259,10 @@ void CDmodel::CDinner2D(int i, int j){
     }
 
     if(j==0){
-        material[pointer].C_new=0;
+        CDmaterial[pointer].C_new=0;
         ReceptorArray[i].AB=ReceptorArray[i].AB+A*Area/deltax;
     }else{
-        material[pointer].C_new=A;
+        CDmaterial[pointer].C_new=A;
     }
 
     // Binding Kinetics
@@ -278,31 +275,31 @@ void CDmodel::CDinner2D(int i, int j){
                 if(abs(tau*Rp) <= ReceptorArray[i].B){
                     ReceptorArray[i].B=ReceptorArray[i].B+tau*Rp;
                     ReceptorArray[i].AB=ReceptorArray[i].AB-tau*Rp;
-                    material[pointer].C_new=A+tau*R;
+                    CDmaterial[pointer].C_new=A+tau*R;
                 }else{
                     ReceptorArray[i].AB=ReceptorArray[i].AB+ReceptorArray[i].B;
-                    material[pointer].C_new=A-ReceptorArray[i].B*deltax/Area;
+                    CDmaterial[pointer].C_new=A-ReceptorArray[i].B*deltax/Area;
                     ReceptorArray[i].B=0;
                 }
             }else{
                 if(abs(tau*R) <= A){
                     ReceptorArray[i].B=ReceptorArray[i].B+tau*Rp;
                     ReceptorArray[i].AB=ReceptorArray[i].AB-tau*Rp;
-                    material[pointer].C_new=A+tau*R;
+                    CDmaterial[pointer].C_new=A+tau*R;
                 }else{
                     ReceptorArray[i].B=ReceptorArray[i].B-A*Area/deltax;
                     ReceptorArray[i].AB=ReceptorArray[i].AB+A*Area/deltax;
-                    material[pointer].C_new=0;
+                    CDmaterial[pointer].C_new=0;
                 }
             }
         }else{
             if(Rp*tau<=ReceptorArray[i].AB){
                 ReceptorArray[i].B=ReceptorArray[i].B+Rp*tau;
                 ReceptorArray[i].AB=ReceptorArray[i].AB-Rp*tau;
-                material[pointer].C_new=A+Rp*tau*deltax/Area;
+                CDmaterial[pointer].C_new=A+Rp*tau*deltax/Area;
             }else{
                 ReceptorArray[i].B=ReceptorArray[i].B+ReceptorArray[i].AB;
-                material[pointer].C_new=material[pointer].C_new+ReceptorArray[i].AB*deltax/Area;
+                CDmaterial[pointer].C_new=CDmaterial[pointer].C_new+ReceptorArray[i].AB*deltax/Area;
                 ReceptorArray[i].AB=0;
             }
         }
@@ -311,7 +308,7 @@ void CDmodel::CDinner2D(int i, int j){
 
 }
 
-void CDmodel::PrintMaterial2D(string path){
+void CDmodel::CD_PrintMaterial2D(string path){
 
     fstream output;
 
@@ -320,7 +317,7 @@ void CDmodel::PrintMaterial2D(string path){
     output.precision(6);
 
 
-    output << "X(1)\tY(2)\tK(3)\tC_new(4)\tC_old(5)\tui(6)\tvi(7)\tflag(8)#"<<endl;
+    output << "X(1)\tY(2)\tC_new(3)\tC_old(4)\tui(5)\tvi(6)\tflag(7)#"<<endl;
     output << "[nm]\t[nm]\t[nm]\t#"<<endl;
     output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
 
@@ -328,8 +325,8 @@ void CDmodel::PrintMaterial2D(string path){
         for (int j=0;j<py;j++){
             int pointer =(px)*(j) + (i);
             output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t'
-                   << material[pointer].k << '\t' <<material[pointer].C_new << '\t' <<material[pointer].C_old << '\t'
-                   << material[pointer].ui << '\t' << material[pointer].vi << '\t' << material[pointer].flag <<endl;
+                   <<CDmaterial[pointer].C_new << '\t' <<CDmaterial[pointer].C_old << '\t'
+                   << CFDmaterial[pointer].ui << '\t' << CFDmaterial[pointer].vi << '\t' << CDmaterial[pointer].flag <<endl;
 
         }
     }
@@ -337,7 +334,7 @@ void CDmodel::PrintMaterial2D(string path){
     output.close();
 }
 
-void CDmodel::PrintReceptor2D(string path){
+void CDmodel::CD_PrintReceptor2D(string path){
 
     fstream output;
 

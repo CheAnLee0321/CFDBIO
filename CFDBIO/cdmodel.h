@@ -1,18 +1,16 @@
 #ifndef CDMODEL_H
 #define CDMODEL_H
 #include "fvmesh.h"
+#include "cfd.h"
+#include <complex>
 
-struct electrolyte {
-    double k;   // permitivitty
+struct CDElectrolyte {
     double C_new;
     double C_old;
-    double ui;  //velocity
-    double vi;
-    double wi;
     double flag;// 1=channel, 2=insulator, 3=electrolyte, 4=sub, 5=analyte;
 };
 
-struct receptor {
+struct Receptor {
     double coordX;
     double coordY;
     double B;      //concentration
@@ -20,32 +18,29 @@ struct receptor {
     int flag;
 };
 
-typedef receptor Receptor;
-typedef electrolyte Electrolyte;
-
-class CDmodel : public FVMesh{
+class CDmodel : public CFD{
 
 public:
     CDmodel();
     ~CDmodel();
 
-    void CDInitialize();
+    void CD_Initialize();
     //Convection Diffusion Eq.
-    void CDParameter();
-    void CDAddReceptors2D();
-    void CDInitialGuess2D();
-    void CDSolver2D();
-    void CDinner2D(int i, int j);
-    void CDBoundary2D(int i, int j);
+    void CD_Parameter();
+    void CD_AddReceptors2D();
+    void CD_InitialGuess2D();
+    void CD_Solver2D();
+    void CD_inner2D(int i, int j);
+    void CD_Boundary2D(int i, int j);
 
     //Tool Function
-    void PrintMaterial2D(string path);
-    void PrintReceptor2D(string path);
+    void CD_PrintMaterial2D(string path);
+    void CD_PrintReceptor2D(string path);
 
 protected:
 
     Receptor *ReceptorArray;
-    Electrolyte *material;
+    CDElectrolyte *CDmaterial;
 
     int TN, DimensionTag, L1,frame,frame_step;
     double ElectrodeGap, ElectrodeWidth;

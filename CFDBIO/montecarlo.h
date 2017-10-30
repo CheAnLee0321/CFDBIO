@@ -26,35 +26,35 @@ public:
     MonteCarlo();
     ~MonteCarlo();
 
-    void ParticleTracingParameter3D();
-    void ParticleTracingNew();
-    void ParticleTracingInitialize3D();
-    void ParticleTracingSimulation3D();
+    void MC_ParticleTracingParameter3D();
+    void MC_ParticleTracingNew();
+    void MC_ParticleTracingInitialize3D();
+    void MC_ParticleTracingSimulation3D();
 
-    void DirectGenerateOnSurface();
+    void MC_DirectGenerateOnSurface();
 
-    int ParticleTracing3DFindI(int dn, int tn);
-    int ParticleTracing3DFindJ(int dn, int tn);
-    int ParticleTracing3DFindK(int dn, int tn);
+    int MC_ParticleTracing3DFindI(int dn, int tn);
+    int MC_ParticleTracing3DFindJ(int dn, int tn);
+    int MC_ParticleTracing3DFindK(int dn, int tn);
 
-    double NormalDistribution();
+    double MC_NormalDistribution();
 
-    void StickBoundary(int i, int j);
-    void RSABoundary(int i, int j);
-    void FirstOrderBoundary(int i, int j);
-    void FirstOrderBoundary_FiniteR(int i, int j);
-    void FirstOrderBoundary_RSA1(int i, int j);
-    void FirstOrderBoundary_RSA2(int i, int j);
-    int FirstOrderFindI(int dn, int tn);
-    int FirstOrderFindJ(int dn, int tn);
-    void FirstOrderRelease(int i, int j);
-    void FirstOrderRelease_FiniteR(int i, int j);
+    void MC_StickBoundary(int i, int j);
+    void MC_RSABoundary(int i, int j);
+    void MC_FirstOrderBoundary(int i, int j);
+    void MC_FirstOrderBoundary_FiniteR(int i, int j);
+    void MC_FirstOrderBoundary_RSA1(int i, int j);
+    void MC_FirstOrderBoundary_RSA2(int i, int j);
+    int MC_FirstOrderFindI(int dn, int tn);
+    int MC_FirstOrderFindJ(int dn, int tn);
+    void MC_FirstOrderRelease(int i, int j);
+    void MC_FirstOrderRelease_FiniteR(int i, int j);
 
-    double factorial(double n);
-    double C_comb(double m, double n);
-    double P_binominal(double m, double n, double p);
-    double H_comb(double m, double n);
-    void distribution (void);
+    double MC_factorial(double n);
+    double MC_Ccomb(double m, double n);
+    double MC_Pbinominal(double m, double n, double p);
+    double MC_Hcomb(double m, double n);
+    void MC_Distribution (void);
 
 
 protected:

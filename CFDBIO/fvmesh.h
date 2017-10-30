@@ -17,34 +17,32 @@ public:
     FVMesh();
     ~FVMesh();
 
-    void CFDStructurePatameterSet2D();
-    void CFDStructurePatameterSet3D();
 
-    void DDmodelStructurePatameterSet2D(int Struct);
-    void DDmodelStructurePatameterSet3D(int Struct);
+    void FVMesh_DDmodelStructurePatameterSet2D(int Struct);
+    void FVMesh_DDmodelStructurePatameterSet3D(int Struct);
 
-    void CDStructurePatameterSet2D();
+    void FVMesh_CDStructurePatameterSet2D();
+    void FVMesh_CFDStructurePatameterSet2D();
 
     //2D
-    void CFDMeshParameterSet2D();
-    void DDmodelMeshParameterSet2D();
-    void CDMeshParameterSet2D();
-    void BlockMeshingMesh2D();
+    void FVMesh_DDmodelMeshParameterSet2D();
+    void FVMesh_BlockMeshingMesh2D();
+    void FVMesh_CDMeshParameterSet2D();
+    void FVMesh_CFDMeshParameterSet2D();
 
     //3D
-    void CFDMeshParameterSet3D();
-    void DDmodelMeshParameterSet3D();
-    void BlockMeshingMesh3D();
+    void FVMesh_DDmodelMeshParameterSet3D();
+    void FVMesh_BlockMeshingMesh3D();
 
     //Tool function
-    void PrintCoordinate2D(string path);
-    void PrintCoordinate3D(string path);
-    void PrintMeshParameter2D();
-    void PrintMeshParameter3D();
+    void FVMesh_PrintCoordinate2D(string path);
+    void FVMesh_PrintCoordinate3D(string path);
+    void FVMesh_PrintMeshParameter2D();
+    void FVMesh_PrintMeshParameter3D();
 
 private:
     //Tool function
-    void MeshInitialize();
+    void FVMesh_MeshInitialize();
 
 protected:
 

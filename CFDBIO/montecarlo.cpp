@@ -15,7 +15,7 @@ MonteCarlo::MonteCarlo(){
 MonteCarlo::~MonteCarlo(){
 }
 
-void MonteCarlo::ParticleTracingParameter3D(){
+void MonteCarlo::MC_ParticleTracingParameter3D(){
 
     ModeT=1;
 
@@ -32,8 +32,8 @@ void MonteCarlo::ParticleTracingParameter3D(){
     lz=1000*1000;
 
     //Sensor Area
-    SensorWidth=10*1000;//1000;
-    SensorLength=1000;//100;
+    SensorWidth=5*1000;
+    SensorLength=1000;
     ReceptorMesh=10;
 
     //
@@ -51,7 +51,7 @@ void MonteCarlo::ParticleTracingParameter3D(){
     AnalyteRadius_nm=AnalyteRadius_m*1e9;
     AnalyteMass=150*1000*1.6605e-27; //1.6605e-27*1000*150; //mass, kg. 1 Dalton = 1.6605e-27 kg
     AnalyteValence=-10;
-    DotN=602/10;   //1mM = 1 mol/m3, Avogadro = 6.0221409e23
+    DotN=602/20;   //1mM = 1 mol/m3, Avogadro = 6.0221409e23
 
 
     OutputFrame=1;
@@ -229,7 +229,7 @@ void MonteCarlo::ParticleTracingParameter3D(){
     output.close();
 }
 
-void MonteCarlo::ParticleTracingNew(){
+void MonteCarlo::MC_ParticleTracingNew(){
 
     Analyte=new target*[DotN];
 #pragma omp parallel for
@@ -242,7 +242,7 @@ void MonteCarlo::ParticleTracingNew(){
     ParticleOnWire=new int [WireN];
 }
 
-void MonteCarlo::ParticleTracingInitialize3D(){
+void MonteCarlo::MC_ParticleTracingInitialize3D(){
 
     srand(time(NULL));
 
@@ -284,7 +284,7 @@ void MonteCarlo::ParticleTracingInitialize3D(){
     }
 }
 
-void MonteCarlo::ParticleTracingSimulation3D(){
+void MonteCarlo::MC_ParticleTracingSimulation3D(){
 
 
     int TotalCapture_now=0;
@@ -385,11 +385,11 @@ void MonteCarlo::ParticleTracingSimulation3D(){
                 //avgV
                 if(ModeT!=1){
                     //Find I
-                    I=ParticleTracing3DFindI(i, 0);
+                    I=MC_ParticleTracing3DFindI(i, 0);
                     //Find J
-                    J=ParticleTracing3DFindJ(i, 0);
+                    J=MC_ParticleTracing3DFindJ(i, 0);
                     //Find K
-                    K=ParticleTracing3DFindK(i, 0);
+                    K=MC_ParticleTracing3DFindK(i, 0);
 
                     pointer = (px)*(px)*(K) + (px)*(J) + (I);
                     pointer_ip = (px)*(px)*(K) +  (px)*(J) + (I+1);
@@ -401,12 +401,12 @@ void MonteCarlo::ParticleTracingSimulation3D(){
                     pointer_ijkp = (px)*(px)*(K+1) +  (px)*(J+1) + (I+1);
 
                     if(ModeT==2||ModeT==3||ModeT==6){
-                        avgVx=(solution[pointer].ui+solution[pointer_ip].ui+solution[pointer_jp].ui+solution[pointer_kp].ui
-                               +solution[pointer_ijp].ui+solution[pointer_ikp].ui+solution[pointer_jkp].ui+solution[pointer_ijkp].ui)/8.0;
-                        avgVy=(solution[pointer].vi+solution[pointer_ip].vi+solution[pointer_jp].vi+solution[pointer_kp].vi
-                               +solution[pointer_ijp].vi+solution[pointer_ikp].vi+solution[pointer_jkp].vi+solution[pointer_ijkp].vi)/8.0;
-                        avgVz=(solution[pointer].wi+solution[pointer_ip].wi+solution[pointer_jp].wi+solution[pointer_kp].wi
-                               +solution[pointer_ijp].wi+solution[pointer_ikp].wi+solution[pointer_jkp].wi+solution[pointer_ijkp].wi)/8.0;
+                        avgVx=(CFDmaterial[pointer].ui+CFDmaterial[pointer_ip].ui+CFDmaterial[pointer_jp].ui+CFDmaterial[pointer_kp].ui
+                               +CFDmaterial[pointer_ijp].ui+CFDmaterial[pointer_ikp].ui+CFDmaterial[pointer_jkp].ui+CFDmaterial[pointer_ijkp].ui)/8.0;
+                        avgVy=(CFDmaterial[pointer].vi+CFDmaterial[pointer_ip].vi+CFDmaterial[pointer_jp].vi+CFDmaterial[pointer_kp].vi
+                               +CFDmaterial[pointer_ijp].vi+CFDmaterial[pointer_ikp].vi+CFDmaterial[pointer_jkp].vi+CFDmaterial[pointer_ijkp].vi)/8.0;
+                        avgVz=(CFDmaterial[pointer].wi+CFDmaterial[pointer_ip].wi+CFDmaterial[pointer_jp].wi+CFDmaterial[pointer_kp].wi
+                               +CFDmaterial[pointer_ijp].wi+CFDmaterial[pointer_ikp].wi+CFDmaterial[pointer_jkp].wi+CFDmaterial[pointer_ijkp].wi)/8.0;
                     }
                 }
 
@@ -415,16 +415,16 @@ void MonteCarlo::ParticleTracingSimulation3D(){
                 sumZ=0;
                 //BM force
                 if(ModeT==1||ModeT==3||ModeT==5||ModeT==6){
-                    sumX=sumX+(SigmaForce*NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
-                    sumY=sumY+(SigmaForce*NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
-                    sumZ=sumZ+(SigmaForce*NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
+                    sumX=sumX+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
+                    sumY=sumY+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
+                    sumZ=sumZ+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
                 }
 
                 //EP forceX
                 if(ModeT==4||ModeT==5||ModeT==6){
-                    sumX=sumX+(80*(e0*1e9)*solution[pointer].Ex*ZetaV/eta_m*tau)*1e9;
-                    sumY=sumY+(80*(e0*1e9)*solution[pointer].Ey*ZetaV/eta_m*tau)*1e9;
-                    sumZ=sumZ+(80*(e0*1e9)*solution[pointer].Ez*ZetaV/eta_m*tau)*1e9;
+                    sumX=sumX+(80*(e0*1e9)*CFDmaterial[pointer].Ex*ZetaV/eta_m*tau)*1e9;
+                    sumY=sumY+(80*(e0*1e9)*CFDmaterial[pointer].Ey*ZetaV/eta_m*tau)*1e9;
+                    sumZ=sumZ+(80*(e0*1e9)*CFDmaterial[pointer].Ez*ZetaV/eta_m*tau)*1e9;
                 }
 
                 //Flow FieldX
@@ -448,7 +448,7 @@ void MonteCarlo::ParticleTracingSimulation3D(){
                 //Stick
                 //StickBoundary(i,1);
                 //RSA
-                RSABoundary(i,1);
+                MC_RSABoundary(i,1);
                 //FirstOrderBoundar
                 //FirstOrderBoundary(i,1);
                 //FirstOrderBoundary_FiniteR(i,1);
@@ -607,7 +607,7 @@ void MonteCarlo::ParticleTracingSimulation3D(){
 }
 
 
-void MonteCarlo::DirectGenerateOnSurface(){
+void MonteCarlo::MC_DirectGenerateOnSurface(){
 
 
     int TotalCapture_now=0;
@@ -644,7 +644,7 @@ void MonteCarlo::DirectGenerateOnSurface(){
     fstream output4;
 
     output4.open(ParticleOnWire2.c_str(), fstream::out | fstream::trunc);
-    output4 << "T(1)\tN(2)\tTotal(3)\tWire_1(4)\tWire_2(5)\tWire_3(6)\t #"<<endl;
+    output4 << "T(1)\tN(2)\tTotal(3)\tTriggered(4)\tWire_1(5)\tWire_2(6)\tWire_3(7)\t #"<<endl;
     output4 <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
     output4 << 0*tau << '\t'<< 0 << '\t' << TotalParticleOnWires_now << '\t' ;
     for(int i=0;i<WireN;i++){
@@ -673,7 +673,7 @@ void MonteCarlo::DirectGenerateOnSurface(){
         Analyte[i][1].coordZ=0;
 
         //Stick
-        StickBoundary(i,1);
+        MC_StickBoundary(i,1);
     }
 
 
@@ -715,9 +715,16 @@ void MonteCarlo::DirectGenerateOnSurface(){
 
     TotalCapture_previous=TotalCapture_now;
 
+    int triggered=0;
+    for(int i=0;i<WireN;i++){
+        if(ParticleOnWire[i]>0){
+            triggered=triggered+1;
+        }
+    }
+
     // Output when total capture particles on wire is increased.
     if(TotalParticleOnWires_now!=TotalParticleOnWires_previous){
-        output4 << 0 << '\t'<< 0 << '\t' << TotalParticleOnWires_now << '\t' ;
+        output4 << 0 << '\t'<< 0 << '\t' << TotalParticleOnWires_now  << '\t'<<triggered<< '\t' ;
         for(int i=0;i<WireN;i++){
             output4 << ParticleOnWire[i] << '\t';
         }
@@ -739,7 +746,7 @@ void MonteCarlo::DirectGenerateOnSurface(){
     output1.close();
 }
 
-int MonteCarlo::ParticleTracing3DFindI(int dn, int tn){
+int MonteCarlo::MC_ParticleTracing3DFindI(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordX;
     int High=px-1;
@@ -771,7 +778,7 @@ int MonteCarlo::ParticleTracing3DFindI(int dn, int tn){
     return I;
 }
 
-int MonteCarlo::ParticleTracing3DFindJ(int dn, int tn){
+int MonteCarlo::MC_ParticleTracing3DFindJ(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordY;
     int High=py-1;
@@ -803,7 +810,7 @@ int MonteCarlo::ParticleTracing3DFindJ(int dn, int tn){
     return J;
 }
 
-int MonteCarlo::ParticleTracing3DFindK(int dn, int tn){
+int MonteCarlo::MC_ParticleTracing3DFindK(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordZ;
     int High=pz-1;
@@ -834,7 +841,7 @@ int MonteCarlo::ParticleTracing3DFindK(int dn, int tn){
     return K;
 }
 
-double MonteCarlo::NormalDistribution(){
+double MonteCarlo::MC_NormalDistribution(){
 
     //mean=expectation, sigma=standard deviation.
 
@@ -855,7 +862,7 @@ double MonteCarlo::NormalDistribution(){
 
 }
 
-void MonteCarlo::StickBoundary(int i, int j){
+void MonteCarlo::MC_StickBoundary(int i, int j){
 
     //Bottom BC absorb all particle who reach the sensor area.
 
@@ -907,7 +914,7 @@ void MonteCarlo::StickBoundary(int i, int j){
     //else no change
 }
 
-void MonteCarlo::RSABoundary(int i, int j){
+void MonteCarlo::MC_RSABoundary(int i, int j){
 
     //Bottom BC absorb all particle who reach the sensor area.
     //considing the molecule radius overlapping
@@ -973,7 +980,7 @@ void MonteCarlo::RSABoundary(int i, int j){
     //else no change
 }
 
-void MonteCarlo::FirstOrderBoundary(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary(int i, int j){
 
     //Bottom BC absorb particle according to first order chemical reaction
 
@@ -1020,9 +1027,9 @@ void MonteCarlo::FirstOrderBoundary(int i, int j){
                 int I=0;
                 int J=0;
                 //Find I
-                I=FirstOrderFindI(i,j);
+                I=MC_FirstOrderFindI(i,j);
                 //Find J
-                J=FirstOrderFindJ(i,j);
+                J=MC_FirstOrderFindJ(i,j);
                 //Calculate pointer
                 int pointer=Rpx*(J)+(I);
 
@@ -1068,7 +1075,7 @@ void MonteCarlo::FirstOrderBoundary(int i, int j){
     //else no change
 }
 
-void MonteCarlo::FirstOrderBoundary_FiniteR(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary_FiniteR(int i, int j){
 
     //Each receptor block can only receive one molecules
 
@@ -1118,9 +1125,9 @@ void MonteCarlo::FirstOrderBoundary_FiniteR(int i, int j){
                 int I=0;
                 int J=0;
                 //Find I
-                I=FirstOrderFindI(i,j);
+                I=MC_FirstOrderFindI(i,j);
                 //Find J
-                J=FirstOrderFindJ(i,j);
+                J=MC_FirstOrderFindJ(i,j);
                 //Calculate pointer
                 int pointer=Rpx*(J)+(I);
 
@@ -1166,7 +1173,7 @@ void MonteCarlo::FirstOrderBoundary_FiniteR(int i, int j){
     //else no change
 }
 
-void MonteCarlo::FirstOrderBoundary_RSA1(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary_RSA1(int i, int j){
 
     //Each receptor block can only receive one molecules
 
@@ -1223,9 +1230,9 @@ void MonteCarlo::FirstOrderBoundary_RSA1(int i, int j){
                     int I=0;
                     int J=0;
                     //Find I
-                    I=FirstOrderFindI(i,j);
+                    I=MC_FirstOrderFindI(i,j);
                     //Find J
-                    J=FirstOrderFindJ(i,j);
+                    J=MC_FirstOrderFindJ(i,j);
                     //Calculate pointer
                     int pointer=Rpx*(J)+(I);
 
@@ -1262,7 +1269,7 @@ void MonteCarlo::FirstOrderBoundary_RSA1(int i, int j){
 
 }
 
-void MonteCarlo::FirstOrderBoundary_RSA2(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary_RSA2(int i, int j){
 
     //RSA without using receptor blocks
 
@@ -1334,7 +1341,7 @@ void MonteCarlo::FirstOrderBoundary_RSA2(int i, int j){
 
 }
 
-int MonteCarlo::FirstOrderFindI(int dn, int tn){
+int MonteCarlo::MC_FirstOrderFindI(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordX;
     int High=Rpx-1;
@@ -1369,7 +1376,7 @@ int MonteCarlo::FirstOrderFindI(int dn, int tn){
     return I;
 }
 
-int MonteCarlo::FirstOrderFindJ(int dn, int tn){
+int MonteCarlo::MC_FirstOrderFindJ(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordY;
     int High=Rpy-1;
@@ -1401,14 +1408,14 @@ int MonteCarlo::FirstOrderFindJ(int dn, int tn){
     return J;
 }
 
-void MonteCarlo::FirstOrderRelease(int i, int j){
+void MonteCarlo::MC_FirstOrderRelease(int i, int j){
 
     int I=0;
     int J=0;
     //Find I
-    I=FirstOrderFindI(i,j);
+    I=MC_FirstOrderFindI(i,j);
     //Find J
-    J=FirstOrderFindJ(i,j);
+    J=MC_FirstOrderFindJ(i,j);
     //Calculate pointer
     int pointer=Rpx*(J)+(I);
 
@@ -1417,14 +1424,14 @@ void MonteCarlo::FirstOrderRelease(int i, int j){
     ReceptorArray[pointer].AB=ReceptorArray[pointer].AB-UnitCon;
 }
 
-void MonteCarlo::FirstOrderRelease_FiniteR(int i, int j){
+void MonteCarlo::MC_FirstOrderRelease_FiniteR(int i, int j){
 
     int I=0;
     int J=0;
     //Find I
-    I=FirstOrderFindI(i,j);
+    I=MC_FirstOrderFindI(i,j);
     //Find J
-    J=FirstOrderFindJ(i,j);
+    J=MC_FirstOrderFindJ(i,j);
     //Calculate pointer
     int pointer=Rpx*(J)+(I);
 
@@ -1433,76 +1440,119 @@ void MonteCarlo::FirstOrderRelease_FiniteR(int i, int j){
     ReceptorArray[pointer].AB=ReceptorArray[pointer].AB-UnitCon;
 }
 
-double MonteCarlo::factorial(double n){
+double MonteCarlo::MC_factorial(double n){
 
     if (n<=1){
         return 1;
     }else{
-        return n*factorial(n-1);;
+        return n*MC_factorial(n-1);;
     }
 }
 
-double MonteCarlo::C_comb(double m, double n){
+double MonteCarlo::MC_Ccomb(double m, double n){
 
-    double A = factorial(m);
-    double B = factorial(n);
-    double C = factorial(m-n);
+    double A = MC_factorial(m);
+    double B = MC_factorial(n);
+    double C = MC_factorial(m-n);
 
     return A/B/C;
 }
 
-double MonteCarlo::P_binominal(double m, double n, double p){
+double MonteCarlo::MC_Pbinominal(double m, double n, double p){
 
-    return C_comb(m,n)*pow(p,n)*pow(1-p,m-n);
+    return MC_Ccomb(m,n)*pow(p,n)*pow(1-p,m-n);
 }
 
-double MonteCarlo::H_comb(double m, double n){
+double MonteCarlo::MC_Hcomb(double m, double n){
 
-    return C_comb(m+n-1,n);
+    return MC_Ccomb(m+n-1,n);
 }
 
-void MonteCarlo::distribution(){
-    fstream output1,output2;
+void MonteCarlo::MC_Distribution(){
 
-    output1.open("test1.txt", fstream::out | fstream::trunc);
-    output2.open("test2.txt", fstream::out | fstream::trunc);
+    fstream output1,output2,output3;
+
+    output1.open("Binominal.txt", fstream::out | fstream::trunc);
+    output2.open("Nanowire.txt", fstream::out | fstream::trunc);
+    output3.open("DistributionParameter.txt", fstream::out | fstream::trunc);
 
     double p=0.2;
     double total_nanowire_number=100;
-    double total_biomolecues=50;
+    double total_biomolecues=120;
+
+    output3<<"Biosensor Control Method Parameter"<<endl;
+    output3<<"Total Biomolecules="<<total_biomolecues<<endl;
+    output3<<"Biomolecules Capture Probability p="<<p<<endl;
+    output3<<"Total Nanowires="<<total_nanowire_number<<endl<<endl;
 
     output1 << "N" <<'\t'<< "P_bi" <<'\t'<<endl;
     output2 << "N" <<'\t'<< "P_wire" <<'\t'<<endl;
 
+    double *BProb= new double [(int)total_biomolecues];
+    for(int i=0;i<total_biomolecues;i++){
+        BProb[i]=0;
+    }
 
+    //Calculate binominal distribution
     double check1=0;
-    for(int i=1;i<total_biomolecues+1;i++){
-
-        check1=check1+P_binominal(total_biomolecues,i,p);
-        output1 <<scientific<< i <<'\t'<<P_binominal(total_biomolecues,i,p)<<endl;
+    double AvgBiomolecules=0;
+    for(int i=0;i<total_biomolecues+1;i++){
+        check1=check1+MC_Pbinominal(total_biomolecues,i,p);
+        BProb[i]=MC_Pbinominal(total_biomolecues,i,p);
+        AvgBiomolecules=AvgBiomolecules+i*BProb[i];
+        output1 <<scientific<< i <<'\t'<<BProb[i]<<endl;
     }
     cout << "Total Prob1="<<check1<<endl;
 
-    double *sum= new double [(int)total_biomolecues];
+    output3<<"Average Captured Biomolecules="<<AvgBiomolecules<<endl;
 
-    for(int i=1;i<total_biomolecues+1;i++){ // captured biomolecules
+    double *NProb= new double [(int)total_biomolecues];
+    for(int i=0;i<total_biomolecues;i++){
+        NProb[i]=0;
+    }
 
-        for(int j=1;j<i+1;j++){ // triggered nanowires
+    //Calculate Nanowire distribution
+    for(int i=0;i<total_biomolecues+1;i++){ // captured biomolecules
+        for(int j=0;j<i+1;j++){ // triggered nanowires
 
-
-            sum[j]=sum[j]+P_binominal(total_biomolecues,i,p)*C_comb(total_nanowire_number,j)*H_comb(j,i-j)/H_comb(total_nanowire_number,i);
+            NProb[j]=NProb[j]+MC_Pbinominal(total_biomolecues,i,p)*MC_Ccomb(total_nanowire_number,j)*MC_Hcomb(j,i-j)/MC_Hcomb(total_nanowire_number,i);
         }
     }
 
     double check2=0;
-    for(int i=1;i<total_biomolecues+1;i++){
-        check2=check2+sum[i];
-        output2 << i << "\t" << sum[i]<<endl;
+    double AvgNanowires=0;
+    for(int i=0;i<total_biomolecues+1;i++){
+        check2=check2+NProb[i];
+        AvgNanowires=AvgNanowires+NProb[i]*i;
+        output2 << i << "\t" << NProb[i]<<endl;
 
     }
     cout << "Total Prob2="<<check2<<endl;
 
-    cout << H_comb(10,10)<<endl;;
+    output3<<"Average Triggered Nanowires="<<AvgNanowires<<endl;
+
+    double BVariance=0;
+    //Calculate standard deviation
+    for(int i=0;i<total_biomolecues+1;i++){
+        BVariance=BVariance+pow(i,2)*BProb[i];
+    }
+    BVariance=BVariance-pow(AvgBiomolecules,2);
+
+    double Bdeviation=sqrt(BVariance);
+
+    output3<<"Biomolecules standard deviation="<<Bdeviation<<endl;
+
+
+    double NVariance=0;
+    //Calculate standard deviation
+    for(int i=0;i<total_biomolecues+1;i++){
+        NVariance=NVariance+pow(i,2)*NProb[i];
+    }
+    NVariance=NVariance-pow(AvgNanowires,2);
+
+    double Ndeviation=sqrt(NVariance);
+
+    output3<<"Biomolecules standard deviation="<<Ndeviation<<endl;
 
     output1.close();
     output2.close();

@@ -226,7 +226,7 @@ protected:
     //Drift Diffusion Model and Poisson
     //*********************************
 
-    Semiconductor *material;
+    Semiconductor *DDmaterial;
 
     double SimTolPoisson, SimTolEC, SimTolHC;
     int DD_loop, maxIter;
