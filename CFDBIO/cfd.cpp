@@ -44,15 +44,17 @@ void CFD::CFD_NSParameter(){
 
     SimTolVelocity=1e-5;
     SimTolPressure=1e-30;
-    SimTolPoisson=1e-7;
+    SimTolPoisson=1e-6;
+
+    MaxIter=50000;
 
     // alpha 0~1  pressure need more test.
     alphadP=1;
     alphaP=1;
-    alphaPc=0.05; //more nodes -> smaller alphaPc
+    alphaPc=1; //more nodes -> smaller alphaPc
 
     //Warrning ! 3D SIMPLER will need this Velocity relaxzation!! But 2D won't need!!
-    alphaVx=alphaVy=alphaVz=0.5;
+    alphaVx=alphaVy=alphaVz=1;
 
     Pbreak=dPbreak=3;
     Vxbreak=Vybreak=Vzbreak=3;
@@ -61,9 +63,6 @@ void CFD::CFD_NSParameter(){
     CC0=1;
     D_KCl=2.47e-9; //[m2/s]
     Conductivity=11.824e-3; //[S/m] // 1mM 11.824 mS/m
-
-    ElectrodeGap=20*1000;
-    ElectrodeWidth=50*1000;
 
     //ion concentration
     //10*6.022e-4;   6.022*e-4 1/nm3 = 1mM = 1 mol/m3 = 1e-3 mol/L = 1e-3 M, 3nm debye = 10mM
@@ -79,7 +78,6 @@ void CFD::CFD_NSParameter(){
     CDL=Water_permi*e0*1e9/Lambda_D2; //[F/m2]
     COxide=3.9*e0*1e18/4;
     CTotal=CDL*COxide/(CDL+COxide);
-    cerr << "CDL="<<CDL<<" COxide="<<COxide<<" CTotal="<<CTotal<<endl;
 
 
     CharFreq=Conductivity*Lambda_D2/(50e-6*Water_permi*e0*1e9);
@@ -133,7 +131,6 @@ void CFD::CFD_NSInitialGuessComplex2D(){
         if(CoordX<lx/2-ElectrodeGap/2 && CoordX>lx/2-ElectrodeGap/2-ElectrodeWidth){
             double Vapp=(-1)*Vac;
             u[pointer1].u=CapLambda*((-1)*80*e0*1e9/(4*eta*1e18)*(norm(CFDmaterial[pointer1].phi-Vapp)-norm(CFDmaterial[pointer1_in].phi-Vapp))/(xstep*1e-9))*1e9;
-            cout << u[pointer1].u << endl;
             //0.25 is capital lambda factoer account for Stern layer
         }
     }
@@ -237,9 +234,9 @@ void CFD::CFD_SIMPLE2D(){
 
 
     CFD_VelocityCalculation2D();
-    CFD_PrintMaterialComplex2D("SIMPLE_P.txt");
-    CFD_PrintVx2D("SIMPLE_Vx.txt");
-    CFD_PrintVy2D("SIMPLE_Vy.txt");
+    CFD_PrintMaterialComplex2D("SIMPLE_P.dat");
+    CFD_PrintVx2D("SIMPLE_Vx.dat");
+    CFD_PrintVy2D("SIMPLE_Vy.dat");
 }
 
 void CFD::CFD_SIMPLER2D(){
@@ -330,40 +327,32 @@ void CFD::CFD_SIMPLER2D(){
         CFD_dVxCalculation2D();
         CFD_dVyCalculation2D();
 
-        /*
         if(NumIter<=10000){
-            if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
-                //PrintVx(nameVx2.c_str());
-                //PrintVy(nameVy2.c_str());
-                uvwCalculation();
-                PrintMaterial(nameP2.c_str());
+            if( NumIter==1|| NumIter==2 || NumIter==5  || NumIter==10  || NumIter==20 || NumIter==100 || NumIter==500 || NumIter%1000==0){
+                CFD_PrintVx2D(nameVx2.c_str());
+                CFD_PrintVy2D(nameVy2.c_str());
+                CFD_VelocityCalculation2D();
+                CFD_PrintMaterialComplex2D(nameP2.c_str());
             }
         }else{
             if( NumIter%2000==0){
-                //PrintVx(nameVx2.c_str());
-                //PrintVy(nameVy2.c_str());
-                uvwCalculation();
-                PrintMaterial(nameP2.c_str());
+                CFD_PrintVx2D(nameVx2.c_str());
+                CFD_PrintVy2D(nameVy2.c_str());
+                CFD_VelocityCalculation2D();
+                CFD_PrintMaterialComplex2D(nameP2.c_str());
             }
         }
-        */
 
         CFD_VxCorrection2D();
         CFD_VyCorrection2D();
-        CFD_VxBoundary2D();
-        CFD_VyBoundary2D();
-
-        if(NumIter==5000){
-            break;
-        }
 
     }while( (Vxloop!=1 || Vyloop!=1) && NumIter<MaxIter);
 
 
     CFD_VelocityCalculation2D();
-    CFD_PrintMaterialComplex2D("SIMPLER_P_2D.txt");
-    CFD_PrintVx2D("SIMPLER_Vx_2D.txt");
-    CFD_PrintVy2D("SIMPLER_Vy_2D.txt");
+    CFD_PrintMaterialComplex2D("SIMPLE_P.dat");
+    CFD_PrintVx2D("SIMPLE_Vx.dat");
+    CFD_PrintVy2D("SIMPLE_Vy.dat");
 }
 
 double CFD::CFD_VxSolver2D(){
@@ -999,11 +988,43 @@ void CFD::CFD_PrintMaterialComplex2D(const char *path){
                    << CFDmaterial[pointer].Ex << '\t'<< CFDmaterial[pointer].Ey << '\t'
                    << CFDmaterial[pointer].p << '\t'<< CFDmaterial[pointer].dp << '\t'<< CFDmaterial[pointer].ui << '\t'
                    << CFDmaterial[pointer].vi << '\t'<< CFDmaterial[pointer].flag << '\t'<< CFDmaterial[pointer].Crho <<endl;
-
         }
     }
 
     output.close();
+}
+
+void CFD::CFD_ReadMaterialComplex2D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+    double R_real;
+    double R_imag;
+
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            int pointer =(px)*(j) + (i);
+            input >> buffer >> buffer >> CFDmaterial[pointer].k ;
+            input >> R_real >> R_imag;
+            CFDmaterial[pointer].phi=complex<double> (R_real, R_imag);
+            input >> CFDmaterial[pointer].u >> CFDmaterial[pointer].v >> CFDmaterial[pointer].rho
+                  >> CFDmaterial[pointer].mun >> CFDmaterial[pointer].mup >> CFDmaterial[pointer].Ex >> CFDmaterial[pointer].Ey
+                  >> CFDmaterial[pointer].p >> CFDmaterial[pointer].dp >> CFDmaterial[pointer].ui
+                  >> CFDmaterial[pointer].vi >> CFDmaterial[pointer].flag >> CFDmaterial[pointer].Crho;
+
+        }
+    }
+
+    input.close();
 }
 
 void CFD::CFD_VxCorrection2D(){
@@ -1151,9 +1172,17 @@ double CFD::CFD_vAcoef2D(int i, int j){
     return aP;
 }
 
+void CFD::CFD_Initializeation2D(){
+    for(int i=0;i<L;i++){
+        CFDmaterial[i].k=80;
+    }
+}
+
 void CFD::CFD_ACPoissonInitialGuess2D(){
 
     CFDmaterial = new CFDElectrolyte [L];
+
+    CFD_Initializeation2D();
 
     //2D  Two Electrode
     for(int i=0;i<px;i++){
@@ -1178,6 +1207,11 @@ void CFD::CFD_ACPoissonInitialGuess2D(){
             complex<double> B(Conductivity,Omega*CDL*ystep);
             CFDmaterial[pointer1].phi=A/B;
             //CFDmaterial[pointer1].phi=Vapp+I*Omega*CDL*Conductivity*(CFDmaterial[pointer2].phi-CFDmaterial[pointer1].phi)/ystep;
+        }
+
+        int pointer3 =(px)*(py-1) + (i);
+        if(mesh[pointer3].coordX<=lx/2+ReferenceGateWidth/2 && mesh[pointer3].coordX>=lx/2-ReferenceGateWidth/2){
+            CFDmaterial[pointer3].phi=0;
         }
     }
 }
@@ -1303,9 +1337,13 @@ void CFD::ACPoissonBC2D(){
             complex<double> B(Conductivity,Omega*CDL*ystep);
             CFDmaterial[pointer1].phi=A/B;
         }
-        pointer1 =(px)*(py-1) + (i);
-        pointer2 =(px)*(py-2) + (i);
-        CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+
+
+        if(mesh[pointer1].coordX<=lx/2-ReferenceGateWidth/2 || mesh[pointer1].coordX>=lx/2+ReferenceGateWidth/2){
+            pointer1 =(px)*(py-1) + (i);
+            pointer2 =(px)*(py-2) + (i);
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+        }
     }
 
     for(int j=0;j<py;j++){

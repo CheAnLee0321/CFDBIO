@@ -114,8 +114,10 @@ public:
     void CFD_PrintVx2D(const char *path);
     void CFD_PrintVy2D(const char *path);
     void CFD_PrintMaterialComplex2D(const char *path);
+    void CFD_ReadMaterialComplex2D(const char *path);
 
     //CFD Poisson Solver
+    void CFD_Initializeation2D();
     void CFD_ACPoissonInitialGuess2D();
     double CFD_PoissonSolverComplex2D();
     double CFD_PoissonGaussSeidelComplex2D();
@@ -139,7 +141,7 @@ protected:
 
     //ACEO
     double ACFreq, CharFreq;
-    double Vac, ElectrodeGap, ElectrodeWidth, CapLambda;
+    double Vac, CapLambda;
     double Lambda_D1, Lambda_D2, D_KCl, Omega, CDL, COxide, CTotal, Conductivity,CC0;
 };
 
