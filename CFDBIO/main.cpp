@@ -4,33 +4,66 @@
 
 //#include "cdmodel.h"
 #include <iostream>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
 int main()
 {
 
+    //MonteCarlo *test = new MonteCarlo;
+    //test->MC_ParticleTracingParameter3D();
+
+    CFD *test = new CFD();
+    test->FVMesh_CFDStructurePatameterSet3D();
+    test->FVMesh_CFDMeshParameterSet3D();
+    test->FVMesh_BlockMeshingMesh3D();
+    test->FVMesh_PrintMeshParameter3D();
+    test->CFD_NSParameter();
+    test->CFD_ACPoissonInitialGuess3D();
+    //test->CFD_PrintMaterialComplex3D("Initial.dat");
+    //test->CFD_PoissonSolverComplex3D();
+    //test->CFD_PrintMaterialComplex3D("AfterPoisson.dat");
+    //test->CFD_ReadMaterialComplex3D("AfterPoisson.dat");
+    //test->CFD_PrintMaterialComplex3D("ReadMaterial.dat");
+    //test->CFD_PrintPotential3D("Potential.dat");
+    test->CFD_ReadPotential3D("Potential.dat");
+    //test->CFD_PrintPotential3D("ReadPotential.dat");
+    test->CFD_NSInitialGuessComplex3D();
+    test->CFD_VelocityCalculation3D();
+    test->CFD_PrintVelocity3D("Velocity.dat");
+    //test->CFD_ReadVelocity3D("Velocity.dat");
+    //test->CFD_ReadPotential3D("Potential.dat");
+    //test->CFD_PrintVelocity3D("ReadVelocity.dat");
+    /*
     CFD *test = new CFD();
     test->FVMesh_CFDStructurePatameterSet2D();
     test->FVMesh_CFDMeshParameterSet2D();
     test->FVMesh_BlockMeshingMesh2D();
+    test->FVMesh_PrintMeshParameter2D();
     test->CFD_NSParameter();
     test->CFD_ACPoissonInitialGuess2D();
     test->CFD_PrintMaterialComplex2D("I.dat");
     test->CFD_PoissonSolverComplex2D();
-    //test->CFD_NSInitialGuessComplex2D();
-    //test->CFD_VelocityCalculation2D();
-    //test->PrintCoordinate2D("C.msh");
-    test->CFD_PrintMaterialComplex2D("M.dat");
+    test->CFD_ReadMaterialComplex2D("P.dat");
+    test->CFD_PrintMaterialComplex2D("PP.dat");
+    test->CFD_NSInitialGuessComplex2D();
+    test->CFD_VelocityCalculation2D();
+    test->CFD_PrintMaterialComplex2D("CFDI.dat");
+    test->CFD_SIMPLER2D();
+    */
 
-
+    /*
     //MonteCarlo *test=new MonteCarlo();
     //test->ParticleTracingParameter3D();
     //test->ParticleTracingNew();
     //test->ParticleTracingInitialize3D();
     //test->DirectGenerateOnSurface();
     //test->Distribution();
-
+    */
 
     /*
     CDmodel *test=new CDmodel();
@@ -71,5 +104,6 @@ int main()
 
 
     cout << "Simulation Success." << endl;
+    system("pause");
     return 0;
 }

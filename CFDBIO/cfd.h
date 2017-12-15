@@ -54,6 +54,7 @@ public:
     // Basic funstions
     void CFD_NSParameter();
     void CFD_NSInitialGuessComplex2D();
+    void CFD_NSInitialGuessComplex3D();
     void CFD_SIMPLE2D();
     void CFD_SIMPLER2D();
 
@@ -109,21 +110,33 @@ public:
 
     //Calculation
     void CFD_VelocityCalculation2D();
+    void CFD_VelocityCalculation3D();
 
     //I/O
     void CFD_PrintVx2D(const char *path);
     void CFD_PrintVy2D(const char *path);
     void CFD_PrintMaterialComplex2D(const char *path);
+    void CFD_PrintMaterialComplex3D(const char *path);
+    void CFD_PrintVelocity3D(const char *path);
+    void CFD_PrintPotential3D(const char *path);
     void CFD_ReadMaterialComplex2D(const char *path);
+    void CFD_ReadMaterialComplex3D(const char *path);
+    void CFD_ReadVelocity3D(const char *path);
+    void CFD_ReadPotential3D(const char *path);
 
     //CFD Poisson Solver
-    void CFD_Initializeation2D();
+    void CFD_Initialize();
     void CFD_ACPoissonInitialGuess2D();
+    void CFD_ACPoissonInitialGuess3D();
     double CFD_PoissonSolverComplex2D();
+    double CFD_PoissonSolverComplex3D();
     double CFD_PoissonGaussSeidelComplex2D();
+    double CFD_PoissonGaussSeidelComplex3D();
     complex<double> CFD_PoissonGaussSeidelInnerComplex2D(int i, int j);
+    complex<double> CFD_PoissonGaussSeidelInnerComplex3D(int i, int j, int k);
 
     void ACPoissonBC2D();
+    void ACPoissonBC3D();
 
     int ACDCPhaseFlag; // DC=1, AC=2
 

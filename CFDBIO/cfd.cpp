@@ -62,7 +62,7 @@ void CFD::CFD_NSParameter(){
     Vac=0.5;
     CC0=1;
     D_KCl=2.47e-9; //[m2/s]
-    Conductivity=11.824e-3; //[S/m] // 1mM 11.824 mS/m
+    Conductivity=14.69e-3 ; //[S/m] https://uk.hach.com/conductivity-standard-kcl-0-001-m-146-9-s-cm/product?id=24929257894
 
     //ion concentration
     //10*6.022e-4;   6.022*e-4 1/nm3 = 1mM = 1 mol/m3 = 1e-3 mol/L = 1e-3 M, 3nm debye = 10mM
@@ -86,7 +86,7 @@ void CFD::CFD_NSParameter(){
     Omega=2*M_PI*ACFreq;
     CapLambda=0.25;
 
-    //cerr <<"ACFreq="<< ACFreq <<"[Hz]"<<endl;
+    cerr <<"ACFreq="<< ACFreq <<"[Hz]"<<endl;
     //cerr <<"BigOCFD="<< OCFD/CharFreq <<endl;
 }
 
@@ -135,6 +135,97 @@ void CFD::CFD_NSInitialGuessComplex2D(){
         }
     }
 }
+
+void CFD::CFD_NSInitialGuessComplex3D(){
+
+    /*
+     *Data points:
+     *Total:px
+     *Array:[0]-[px-1]
+     *Total data points for Pressure:for (int i=0; i<px; i++)
+     *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+     *Total data points for Velocity:for (int i=1; i<px; i++)
+     *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+     */
+
+    /*
+     *All initial guess region setting should be using <= or >=,
+     *and corresponding boundary condition should be using < or >
+     */
+
+    u = new Vx [L];
+    v = new Vy [L];
+    w = new Vz [L];
+
+    //Giving Vx
+    // Two Electrode
+    for (int i=1; i<px; i++){
+        for (int j=0;j<py;j++){
+            int pointer1,pointer1_in;
+            double CoordX, CoordY, xstep;
+
+            pointer1 = (py)*(px)*(0) + (px)*(j) + (i);
+            pointer1_in = (py)*(px)*(0) + (px)*(j) + (i-1);
+
+            CoordX=(mesh[pointer1].coordX+mesh[pointer1_in].coordX)/2;
+            CoordY=mesh[pointer1].coordY;
+            xstep=abs(mesh[pointer1].coordX-mesh[pointer1_in].coordX);
+
+            if(CoordX>=lx/2+ElectrodeGap/2 && CoordX<=lx/2+ElectrodeGap/2+ElectrodeWidth){
+                if(CoordY>=ly/2-Electrodelength/2 && CoordY<=ly/2+Electrodelength/2){
+                    double Vapp=Vac;
+                    u[pointer1].u=CapLambda*((-1)*80*e0*1e9/(4*eta*1e18)*(norm(CFDmaterial[pointer1].phi-Vapp)-norm(CFDmaterial[pointer1_in].phi-Vapp))/(xstep*1e-9))*1e9;
+                    //0.25 is capital lambda factoer account for Stern layer
+                }
+            }
+
+            if(CoordX<=lx/2-ElectrodeGap/2 && CoordX>=lx/2-ElectrodeGap/2-ElectrodeWidth){
+                if(CoordY>=ly/2-Electrodelength/2 && CoordY<=ly/2+Electrodelength/2){
+                    double Vapp=(-1)*Vac;
+                    u[pointer1].u=CapLambda*((-1)*80*e0*1e9/(4*eta*1e18)*(norm(CFDmaterial[pointer1].phi-Vapp)-norm(CFDmaterial[pointer1_in].phi-Vapp))/(xstep*1e-9))*1e9;
+                    //0.25 is capital lambda factoer account for Stern layer
+                }
+            }
+        }
+    }
+
+    //Giving Vy
+    for (int i=0; i<px; i++){
+        for (int j=1;j<py;j++){
+            int pointer1, pointer1_jn;
+            double CoordX, CoordY, ystep;
+
+            pointer1 = (py)*(px)*(0) + (px)*(j) + (i);
+            pointer1_jn = (py)*(px)*(0) + (px)*(j-1) + (i);
+
+            CoordX=mesh[pointer1].coordX;
+            CoordY=(mesh[pointer1].coordY+mesh[pointer1_jn].coordY)/2;
+            ystep=abs(mesh[pointer1].coordY-mesh[pointer1_jn].coordY);
+
+            if(CoordX>=lx/2+ElectrodeGap/2 && CoordX<=lx/2+ElectrodeGap/2+ElectrodeWidth){
+                if(CoordY>ly/2-Electrodelength/2 && CoordY<ly/2+Electrodelength/2){
+                    //CoordY for Vy here is just at the edge of the electrodes
+                    //if it is >= or <=, there will be a edge only has y velocity
+                    //therefore, < or > is better
+
+                    double Vapp=Vac;
+                    v[pointer1].v=CapLambda*((-1)*80*e0*1e9/(4*eta*1e18)*(norm(CFDmaterial[pointer1].phi-Vapp)-norm(CFDmaterial[pointer1_jn].phi-Vapp))/(ystep*1e-9))*1e9;
+                    //0.25 is capital lambda factoer account for Stern layer
+                }
+            }
+
+            if(CoordX<=lx/2-ElectrodeGap/2 && CoordX>=lx/2-ElectrodeGap/2-ElectrodeWidth){
+                if(CoordY>ly/2-Electrodelength/2 && CoordY<ly/2+Electrodelength/2){
+
+                    double Vapp=(-1)*Vac;
+                    v[pointer1].v=CapLambda*((-1)*80*e0*1e9/(4*eta*1e18)*(norm(CFDmaterial[pointer1].phi-Vapp)-norm(CFDmaterial[pointer1_jn].phi-Vapp))/(ystep*1e-9))*1e9;
+                    //0.25 is capital lambda factoer account for Stern layer
+                }
+            }
+        }
+    }
+}
+
 
 void CFD::CFD_SIMPLE2D(){
 
@@ -910,7 +1001,6 @@ void CFD::CFD_PrintVy2D(const char *path){
     output.close();
 }
 
-
 void CFD::CFD_VelocityCalculation2D(){
    /*
     *Data points:
@@ -965,6 +1055,92 @@ void CFD::CFD_VelocityCalculation2D(){
     }
 }
 
+void CFD::CFD_VelocityCalculation3D(){
+   /*
+    *Data points:
+    *Total:px
+    *Array:[0]-[px-1]
+    *Total data points for Pressure:for (int i=0; i<px; i++)
+    *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+    *Total data points for Velocity:for (int i=1; i<px; i++)
+    *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+    */
+
+    // u
+    for(int i=1;i<px-1;i++){
+        for(int j=0;j<py;j++){
+            for(int k=0;k<pz;k++){
+
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_ip = (px)*(py)*(k) + (px)*(j) + (i+1);
+
+                CFDmaterial[pointer].ui=(u[pointer].u+u[pointer_ip].u)/2;
+            }
+        }
+    }
+
+    for(int j=0;j<py;j++){
+        for(int k=0;k<pz;k++){
+            int pointer = (px)*(py)*(k) + (px)*(j) + (0);
+            int pointer_ip = (px)*(py)*(k) + (px)*(j) + (1);
+            CFDmaterial[pointer].ui=u[pointer_ip].u;
+
+            pointer = (px)*(py)*(k) + (px)*(j) + (px-1);
+            CFDmaterial[pointer].ui=u[pointer].u;
+        }
+    }
+
+    // v
+    for(int i=0;i<px;i++){
+        for(int j=1;j<py-1;j++){
+            for(int k=0;k<pz;k++){
+
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_jp = (px)*(py)*(k) + (px)*(j+1) + (i);
+
+                CFDmaterial[pointer].vi=(v[pointer].v+v[pointer_jp].v)/2;
+            }
+        }
+    }
+
+    for(int i=0;i<px;i++){
+        for(int k=0;k<pz;k++){
+
+            int pointer = (px)*(py)*(k) + (px)*(0) + (i);
+            int pointer_jp = (px)*(py)*(k) + (px)*(1) + (i);
+            CFDmaterial[pointer].vi=v[pointer_jp].v;
+
+            pointer = (px)*(py)*(k) + (px)*(py-1) + (i);
+            CFDmaterial[pointer].vi=v[pointer].v;
+        }
+    }
+
+    // w
+    for(int i=0;i<px;i++){
+        for(int j=0;j<py;j++){
+            for(int k=1;k<pz-1;k++){
+
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_kp = (px)*(py)*(k+1) + (px)*(j) + (i);
+
+                CFDmaterial[pointer].wi=(w[pointer].w+w[pointer_kp].w)/2;
+            }
+        }
+    }
+
+    for(int i=0;i<px;i++){
+        for(int j=0;j<py;j++){
+
+            int pointer = (px)*(py)*(0) + (px)*(j) + (i);
+            int pointer_kp = (px)*(py)*(1) + (px)*(j) + (i);
+            CFDmaterial[pointer].wi=w[pointer_kp].w;
+
+            pointer = (px)*(py)*(pz-1) + (px)*(j) + (i);
+            CFDmaterial[pointer].wi=w[pointer].w;
+        }
+    }
+}
+
 void CFD::CFD_PrintMaterialComplex2D(const char *path){
 
     fstream output;
@@ -993,6 +1169,90 @@ void CFD::CFD_PrintMaterialComplex2D(const char *path){
 
     output.close();
 }
+
+void CFD::CFD_PrintMaterialComplex3D(const char *path){
+
+    fstream output;
+
+    output.open(path, fstream::out | fstream::trunc);
+
+    output.precision(6);
+
+
+    output << "X(1)\tY(2)\tZ(3)\tK(4)\tphi_real(5)\tphi_imag(6)\tu(7)\tv(8)\trho(9)\tmun(10)\tmup(11)\tEx(12)\tEy(13)\tEz(14)\tp(15)\tdp(16)\tui(17)\tvi(18)\twi(19)\tflag(20)\tCrho(21)#"<<endl;
+    output << "[nm]\t[nm]\t[nm]\t#"<<endl;
+    output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t' << mesh[pointer].coordZ << '\t'
+                       << CFDmaterial[pointer].k << '\t' <<real(CFDmaterial[pointer].phi)<< '\t' <<imag(CFDmaterial[pointer].phi) << '\t'
+                       << CFDmaterial[pointer].u << '\t' << CFDmaterial[pointer].v<< '\t'
+                       << CFDmaterial[pointer].rho << '\t'<< CFDmaterial[pointer].mun << '\t'<< CFDmaterial[pointer].mup << '\t'
+                       << CFDmaterial[pointer].Ex << '\t'<< CFDmaterial[pointer].Ey << '\t'<< CFDmaterial[pointer].Ez << '\t'
+                       << CFDmaterial[pointer].p << '\t'<< CFDmaterial[pointer].dp << '\t'<< CFDmaterial[pointer].ui << '\t'
+                       << CFDmaterial[pointer].vi << '\t'<< CFDmaterial[pointer].wi << '\t'<< CFDmaterial[pointer].flag << '\t'<< CFDmaterial[pointer].Crho <<endl;
+            }
+        }
+    }
+
+    output.close();
+}
+
+void CFD::CFD_PrintVelocity3D(const char *path){
+
+    fstream output;
+
+    output.open(path, fstream::out | fstream::trunc);
+
+    output.precision(6);
+
+
+    output << "X(1)\tY(2)\tZ(3)\tui(4)\tvi(5)\twi(6)#"<<endl;
+    output << "[nm]\t[nm]\t[nm]\t#"<<endl;
+    output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t' << mesh[pointer].coordZ << '\t'
+                       << CFDmaterial[pointer].ui << '\t'<< CFDmaterial[pointer].vi << '\t'<< CFDmaterial[pointer].wi <<endl;
+            }
+        }
+    }
+
+    output.close();
+}
+
+void CFD::CFD_PrintPotential3D(const char *path){
+
+    fstream output;
+
+    output.open(path, fstream::out | fstream::trunc);
+
+    output.precision(6);
+
+
+    output << "X(1)\tY(2)\tZ(3)\tReal(4)\tImg(5)#"<<endl;
+    output << "[nm]\t[nm]\t[nm]\t#"<<endl;
+    output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t' << mesh[pointer].coordZ << '\t'
+                       <<real(CFDmaterial[pointer].phi)<< '\t' <<imag(CFDmaterial[pointer].phi)<<endl;
+            }
+        }
+    }
+
+    output.close();
+}
+
 
 void CFD::CFD_ReadMaterialComplex2D(const char *path){
 
@@ -1026,6 +1286,97 @@ void CFD::CFD_ReadMaterialComplex2D(const char *path){
 
     input.close();
 }
+
+void CFD::CFD_ReadMaterialComplex3D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+    double R_real;
+    double R_imag;
+
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                input >> buffer >> buffer >> buffer >> CFDmaterial[pointer].k ;
+                input >> R_real >> R_imag;
+                CFDmaterial[pointer].phi=complex<double> (R_real, R_imag);
+                input >> CFDmaterial[pointer].u >> CFDmaterial[pointer].v >> CFDmaterial[pointer].rho
+                      >> CFDmaterial[pointer].mun >> CFDmaterial[pointer].mup >> CFDmaterial[pointer].Ex >> CFDmaterial[pointer].Ey >> CFDmaterial[pointer].Ez
+                      >> CFDmaterial[pointer].p >> CFDmaterial[pointer].dp >> CFDmaterial[pointer].ui
+                      >> CFDmaterial[pointer].vi>> CFDmaterial[pointer].wi >> CFDmaterial[pointer].flag >> CFDmaterial[pointer].Crho;
+
+            }
+        }
+    }
+
+    input.close();
+}
+
+void CFD::CFD_ReadVelocity3D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                input >> buffer >> buffer >> buffer
+                      >> CFDmaterial[pointer].ui >> CFDmaterial[pointer].vi>> CFDmaterial[pointer].wi;
+            }
+        }
+    }
+
+    input.close();
+}
+
+void CFD::CFD_ReadPotential3D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+    double R_real;
+    double R_imag;
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                input >> buffer >> buffer >> buffer;
+                input >> R_real >> R_imag;
+                CFDmaterial[pointer].phi=complex<double> (R_real, R_imag);
+            }
+        }
+    }
+
+    input.close();
+}
+
 
 void CFD::CFD_VxCorrection2D(){
 
@@ -1172,7 +1523,7 @@ double CFD::CFD_vAcoef2D(int i, int j){
     return aP;
 }
 
-void CFD::CFD_Initializeation2D(){
+void CFD::CFD_Initialize(){
     for(int i=0;i<L;i++){
         CFDmaterial[i].k=80;
     }
@@ -1182,7 +1533,7 @@ void CFD::CFD_ACPoissonInitialGuess2D(){
 
     CFDmaterial = new CFDElectrolyte [L];
 
-    CFD_Initializeation2D();
+    CFD_Initialize();
 
     //2D  Two Electrode
     for(int i=0;i<px;i++){
@@ -1216,6 +1567,52 @@ void CFD::CFD_ACPoissonInitialGuess2D(){
     }
 }
 
+void CFD::CFD_ACPoissonInitialGuess3D(){
+
+    CFDmaterial = new CFDElectrolyte [L];
+
+    CFD_Initialize();
+
+    //3D Two Electrode
+    for(int i=0;i<px;i++){
+        for(int j=0;j<py;j++){
+            int pointer1 = (px)*(py)*(0) + (px)*(j) + (i);
+            int pointer2 = (px)*(py)*(1) + (px)*(j) + (i);
+            //Calcuation is in unit [m]
+            if(mesh[pointer1].coordX>=lx/2+ElectrodeGap/2 && mesh[pointer1].coordX<=lx/2+ElectrodeGap/2+ElectrodeWidth){
+                if(mesh[pointer1].coordY>=ly/2-Electrodelength/2 && mesh[pointer1].coordY<=ly/2+Electrodelength/2){
+                double zstep=abs(mesh[pointer1].coordZ-mesh[pointer2].coordZ)*1e-9;
+                double Vapp=Vac;
+                complex<double> I(0,1);
+                complex<double> A=Conductivity*CFDmaterial[pointer2].phi+Omega*CDL*zstep*Vapp*I;
+                complex<double> B(Conductivity,Omega*CDL*zstep);
+                CFDmaterial[pointer1].phi=A/B;
+                //CFDmaterial[pointer1].phi=Vapp+I*Omega*CDL*Conductivity*(CFDmaterial[pointer2].phi-CFDmaterial[pointer1].phi)/ystep;
+                }
+            }
+
+            if(mesh[pointer1].coordX<=lx/2-ElectrodeGap/2 && mesh[pointer1].coordX>=lx/2-ElectrodeGap/2-ElectrodeWidth){
+                if(mesh[pointer1].coordY>=ly/2-Electrodelength/2 && mesh[pointer1].coordY<=ly/2+Electrodelength/2){
+                double zstep=abs(mesh[pointer1].coordZ-mesh[pointer2].coordZ)*1e-9;
+                double Vapp=(-1)*Vac;
+                complex<double> I(0,1);
+                complex<double> A=Conductivity*CFDmaterial[pointer2].phi+Omega*CDL*zstep*Vapp*I;
+                complex<double> B(Conductivity,Omega*CDL*zstep);
+                CFDmaterial[pointer1].phi=A/B;
+                //CFDmaterial[pointer1].phi=Vapp+I*Omega*CDL*Conductivity*(CFDmaterial[pointer2].phi-CFDmaterial[pointer1].phi)/ystep;
+                }
+            }
+
+            int pointer3 = (px)*(py)*(pz-1) + (px)*(j) + (i);
+            if(mesh[pointer3].coordX<=lx/2+ReferenceGateWidth/2 && mesh[pointer3].coordX>=lx/2-ReferenceGateWidth/2){
+                if(mesh[pointer3].coordY<=ly/2+ReferenceGateWidth/2 && mesh[pointer3].coordY>=ly/2-ReferenceGateWidth/2){
+                    CFDmaterial[pointer3].phi=0;
+                }
+            }
+        }
+    }
+}
+
 double CFD::CFD_PoissonSolverComplex2D(){
 
     int loop=0;
@@ -1235,6 +1632,35 @@ double CFD::CFD_PoissonSolverComplex2D(){
 
         if(loop%10000==0)
             CFD_PrintMaterialComplex2D("Complex_temp.txt");
+
+        if(loop==20000)
+            break;
+
+    }while(errPhi>SimTolPoisson);
+
+    return errPhi_max;
+
+}
+
+double CFD::CFD_PoissonSolverComplex3D(){
+
+    int loop=0;
+
+    double errPhi(0),errPhi_max(0);
+
+    do{
+        loop++;
+
+        errPhi=CFD_PoissonGaussSeidelComplex3D();
+
+        if(errPhi_max < errPhi) {errPhi_max=errPhi;}
+
+        if(loop<20 || loop%100==0)
+        cerr <<"PS:"<< loop <<"\t" <<errPhi<<"\t"<<errPhi_max<<endl;
+
+
+        if(loop%10000==0)
+            //CFD_PrintMaterialComplex3D("Complex_temp.txt");
 
         if(loop==20000)
             break;
@@ -1274,6 +1700,37 @@ double CFD::CFD_PoissonGaussSeidelComplex2D(){
 
 }
 
+double CFD::CFD_PoissonGaussSeidelComplex3D(){
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++) {
+
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+
+                complex<double> phik=CFDmaterial[pointer].phi;
+
+                CFDmaterial[pointer].phi=CFD_PoissonGaussSeidelInnerComplex3D(i,j,k);
+
+                double error=abs(CFDmaterial[pointer].phi-phik);
+
+                error=error/(abs(phik)+1);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    ACPoissonBC3D();
+
+    return max_val;
+
+}
+
 complex<double> CFD::CFD_PoissonGaussSeidelInnerComplex2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
@@ -1308,6 +1765,51 @@ complex<double> CFD::CFD_PoissonGaussSeidelInnerComplex2D(int i, int j){
             /
             ((permitivity_ip/xstep_p+permitivity_in/xstep_n)*deltay
             +(permitivity_jp/ystep_p+permitivity_jn/ystep_n)*deltax - df));
+}
+
+complex<double> CFD::CFD_PoissonGaussSeidelInnerComplex3D(int i, int j, int k){
+
+    int pointer = (py)*(px)*(k) + (px)*(j) + (i);
+    int pointer_ip = (py)*(px)*(k) + (px)*(j) + (i+1);
+    int pointer_in = (py)*(px)*(k) + (px)*(j) + (i-1);
+    int pointer_jp = (py)*(px)*(k) + (px)*(j+1) + (i);
+    int pointer_jn = (py)*(px)*(k) + (px)*(j-1) + (i);
+    int pointer_kp = (py)*(px)*(k+1) + (px)*(j) + (i);
+    int pointer_kn = (py)*(px)*(k-1) + (px)*(j) + (i);
+
+    double permitivity_ip=CFDmaterial[pointer].k*CFDmaterial[pointer_ip].k / (0.5*CFDmaterial[pointer_ip].k+0.5*CFDmaterial[pointer].k);
+    double permitivity_in=CFDmaterial[pointer].k*CFDmaterial[pointer_in].k / (0.5*CFDmaterial[pointer_in].k+0.5*CFDmaterial[pointer].k);
+    double permitivity_jp=CFDmaterial[pointer].k*CFDmaterial[pointer_jp].k / (0.5*CFDmaterial[pointer_jp].k+0.5*CFDmaterial[pointer].k);
+    double permitivity_jn=CFDmaterial[pointer].k*CFDmaterial[pointer_jn].k / (0.5*CFDmaterial[pointer_jn].k+0.5*CFDmaterial[pointer].k);
+    double permitivity_kp=CFDmaterial[pointer].k*CFDmaterial[pointer_kp].k / (0.5*CFDmaterial[pointer_kp].k+0.5*CFDmaterial[pointer].k);
+    double permitivity_kn=CFDmaterial[pointer].k*CFDmaterial[pointer_kn].k / (0.5*CFDmaterial[pointer_kn].k+0.5*CFDmaterial[pointer].k);
+
+    double deltax=abs(mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2;
+    double deltay=abs(mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2;
+    double deltaz=abs(mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2;
+    double xstep_p=abs(mesh[pointer_ip].coordX-mesh[pointer].coordX);
+    double xstep_n=abs(mesh[pointer_in].coordX-mesh[pointer].coordX);
+    double ystep_p=abs(mesh[pointer_jp].coordY-mesh[pointer].coordY);
+    double ystep_n=abs(mesh[pointer_jn].coordY-mesh[pointer].coordY);
+    double zstep_p=abs(mesh[pointer_kp].coordZ-mesh[pointer].coordZ);
+    double zstep_n=abs(mesh[pointer_kn].coordZ-mesh[pointer].coordZ);
+
+    double f(0),df(0);
+
+
+    complex<double> phik=CFDmaterial[pointer].phi;
+
+    f=0;
+    df=0;
+
+    return ((permitivity_ip*CFDmaterial[pointer_ip].phi/xstep_p+permitivity_in*CFDmaterial[pointer_in].phi/xstep_n)*deltay*deltaz
+          +(permitivity_jp*CFDmaterial[pointer_jp].phi/ystep_p+permitivity_jn*CFDmaterial[pointer_jn].phi/ystep_n)*deltax*deltaz
+          +(permitivity_kp*CFDmaterial[pointer_kp].phi/zstep_p+permitivity_kn*CFDmaterial[pointer_kn].phi/zstep_n)*deltax*deltay
+           + f - df*phik )
+           /
+           ((permitivity_ip/xstep_p+permitivity_in/xstep_n)*deltay*deltaz
+           +(permitivity_jp/ystep_p+permitivity_jn/ystep_n)*deltax*deltaz
+           +(permitivity_kp/zstep_p+permitivity_kn/zstep_n)*deltax*deltay - df);
 }
 
 void CFD::ACPoissonBC2D(){
@@ -1356,6 +1858,77 @@ void CFD::ACPoissonBC2D(){
         CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
     }
 }
+
+void CFD::ACPoissonBC3D(){
+
+    //3D Two Electrode
+    for(int i=0;i<px;i++){
+        for(int j=0;j<py;j++){
+            int pointer1 = (px)*(py)*(0) + (px)*(j) + (i);
+            int pointer2 = (px)*(py)*(1) + (px)*(j) + (i);
+
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+
+            //Calcuation is in unit [m]
+            if(mesh[pointer1].coordX>=lx/2+ElectrodeGap/2 && mesh[pointer1].coordX<=lx/2+ElectrodeGap/2+ElectrodeWidth){
+                if(mesh[pointer1].coordY>=ly/2-Electrodelength/2 && mesh[pointer1].coordY<=ly/2+Electrodelength/2){
+                double zstep=abs(mesh[pointer1].coordZ-mesh[pointer2].coordZ)*1e-9;
+                double Vapp=Vac;
+                complex<double> I(0,1);
+                complex<double> A=Conductivity*CFDmaterial[pointer2].phi+Omega*CDL*zstep*Vapp*I;
+                complex<double> B(Conductivity,Omega*CDL*zstep);
+                CFDmaterial[pointer1].phi=A/B;
+                //CFDmaterial[pointer1].phi=Vapp+I*Omega*CDL*Conductivity*(CFDmaterial[pointer2].phi-CFDmaterial[pointer1].phi)/ystep;
+                }
+            }
+
+            if(mesh[pointer1].coordX<=lx/2-ElectrodeGap/2 && mesh[pointer1].coordX>=lx/2-ElectrodeGap/2-ElectrodeWidth){
+                if(mesh[pointer1].coordY>=ly/2-Electrodelength/2 && mesh[pointer1].coordY<=ly/2+Electrodelength/2){
+                double zstep=abs(mesh[pointer1].coordZ-mesh[pointer2].coordZ)*1e-9;
+                double Vapp=(-1)*Vac;
+                complex<double> I(0,1);
+                complex<double> A=Conductivity*CFDmaterial[pointer2].phi+Omega*CDL*zstep*Vapp*I;
+                complex<double> B(Conductivity,Omega*CDL*zstep);
+                CFDmaterial[pointer1].phi=A/B;
+                //CFDmaterial[pointer1].phi=Vapp+I*Omega*CDL*Conductivity*(CFDmaterial[pointer2].phi-CFDmaterial[pointer1].phi)/ystep;
+                }
+            }
+
+            if(mesh[pointer1].coordX<=lx/2-ReferenceGateWidth/2 || mesh[pointer1].coordX>=lx/2+ReferenceGateWidth/2){
+                if(mesh[pointer1].coordY<=ly/2-ReferenceGateWidth/2 || mesh[pointer1].coordY>=ly/2+ReferenceGateWidth/2){
+                    pointer1 = (px)*(py)*(pz-1) + (px)*(j) + (i);
+                    pointer2 = (px)*(py)*(pz-2) + (px)*(j) + (i);
+                    CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+                }
+            }
+        }
+    }
+
+    for(int k=0;k<pz;k++){
+        for(int i=0;i<px;i++){
+            int pointer1 = (px)*(py)*(k) + (px)*(0) + (i);
+            int pointer2 = (px)*(py)*(k) + (px)*(1) + (i);
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+
+            pointer1 = (px)*(py)*(k) + (px)*(py-1) + (i);
+            pointer2 = (px)*(py)*(k) + (px)*(py-2) + (i);
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+        }
+    }
+
+    for(int k=0;k<pz;k++){
+        for(int j=0;j<py;j++){
+            int pointer1 = (px)*(py)*(k) + (px)*(j) + (0);
+            int pointer2 = (px)*(py)*(k) + (px)*(j) + (1);
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+
+            pointer1 = (px)*(py)*(k) + (px)*(j) + (px-1);
+            pointer2 = (px)*(py)*(k) + (px)*(j) + (px-2);
+            CFDmaterial[pointer1].phi=CFDmaterial[pointer2].phi;
+        }
+    }
+}
+
 
 
 
