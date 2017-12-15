@@ -23,6 +23,7 @@ public:
 
     void FVMesh_CDStructurePatameterSet2D();
     void FVMesh_CFDStructurePatameterSet2D();
+    void FVMesh_CFDStructurePatameterSet3D();
 
     //2D
     void FVMesh_DDmodelMeshParameterSet2D();
@@ -33,6 +34,7 @@ public:
     //3D
     void FVMesh_DDmodelMeshParameterSet3D();
     void FVMesh_BlockMeshingMesh3D();
+    void FVMesh_CFDMeshParameterSet3D();
 
     //Tool function
     void FVMesh_PrintCoordinate2D(string path);
@@ -69,7 +71,7 @@ protected:
 
     double JunctionDepth=0, JunctionLength=0, Tox=0;
     double SubstrateThickness=0, BOX=0, ChannelLength=0, ElectrolyteThickness=0;
-
+    double ElectrodeGap, ElectrodeWidth, Electrodelength, ReferenceGateWidth;
 };
 
 #endif // FVMESH_H

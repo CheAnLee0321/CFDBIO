@@ -21,14 +21,12 @@ CFD::~CFD(){
 void CFD::CFD_NSParameter(){
 
     /*
-     *unit is nm !
+     *length unit is nm
      *
      *Dynamic Viscosity (Absolute Viscosity) :  1e-3 Pa s
      *( 1 Pa s = 1 N s/m^2 = 1 kg/(m s) )
      *
-     *Water : 1e-3 Pa s  = 1e-3 kg/(m s) = 1e-12 kg/(nm s)
-     *
-     *Kinematic Viscosity = Dynamic viscosity / rho = m^2/s
+     *Water : 1e-3 Pa s  = 1e-3 kg/(m s) = 1e-12 kg/(nm s) @ T=293K
      *
      *We are using Dynamic Viscosity here.
      *
@@ -38,23 +36,23 @@ void CFD::CFD_NSParameter(){
      *Length:    nm
      *Velocity:  nm/s
      *Dendity:   kg/nm^3
-     *Viscosity: N*s/nm^2
-     *Pressure:  N/nm^2
+     *Viscosity: kg/(nm s)
+     *Pressure:  kg/(nm s2)
      */
 
     SimTolVelocity=1e-5;
     SimTolPressure=1e-30;
     SimTolPoisson=1e-6;
 
-    MaxIter=50000;
+    MaxIter=10000;
 
     // alpha 0~1  pressure need more test.
     alphadP=1;
     alphaP=1;
-    alphaPc=1; //more nodes -> smaller alphaPc
+    alphaPc=1;
 
-    //Warrning ! 3D SIMPLER will need this Velocity relaxzation!! But 2D won't need!!
-    alphaVx=alphaVy=alphaVz=1;
+    //Warrning ! 3D SIMPLER will need this Velocity relaxzation, But 2D won't need.
+    alphaVx=alphaVy=alphaVz=0.5;
 
     Pbreak=dPbreak=3;
     Vxbreak=Vybreak=Vzbreak=3;
@@ -70,10 +68,10 @@ void CFD::CFD_NSParameter(){
 
     Lambda_D1=sqrt(80*e0*1e9*kb*Tamb/(q0*q0*Avogadro*2*CC0)); //[m]
     //Lambda_D2=sqrt(D_KCl*80*e0*1e9/Conductivity); //[m]
+    cerr <<"Lambda_D1="<<Lambda_D1*1e9<<" [nm]"<<endl;
+    cerr <<"Lambda_D2="<<Lambda_D2*1e9<<" [nm]"<<endl;
     Lambda_D2=Lambda_D1; //[m]
 
-    //cerr <<"Lambda_D1="<<Lambda_D1*1e9<<" [nm]"<<endl;
-    //cerr <<"Lambda_D2="<<Lambda_D2*1e9<<" [nm]"<<endl;
 
     CDL=Water_permi*e0*1e9/Lambda_D2; //[F/m2]
     COxide=3.9*e0*1e18/4;
@@ -87,7 +85,7 @@ void CFD::CFD_NSParameter(){
     CapLambda=0.25;
 
     cerr <<"ACFreq="<< ACFreq <<"[Hz]"<<endl;
-    //cerr <<"BigOCFD="<< OCFD/CharFreq <<endl;
+    //cerr <<"BigOmega="<< Omega/CharFreq <<endl;
 }
 
 void CFD::CFD_NSInitialGuessComplex2D(){
@@ -446,6 +444,133 @@ void CFD::CFD_SIMPLER2D(){
     CFD_PrintVy2D("SIMPLE_Vy.dat");
 }
 
+void CFD::CFD_SIMPLER3D(){
+
+    int Vxloop(0),Vyloop(0),Vzloop(0),Ploop(0),dPloop(0),NumIter(0);
+    double errMax, errVx, errVy, errVz, errP, errdP;
+
+    ofstream  output2;
+    cout.precision(2);
+
+    output2.open("convergence.txt", fstream::out | fstream::trunc);
+    output2.precision(10);
+    output2 <<"========================================================"<<endl;
+
+    do{
+        errMax=0;
+
+        stringstream nameP1, nameVx1, nameVy1, nameVz1;
+        string nameP2, nameVx2, nameVy2, nameVz2;
+
+        NumIter++;
+
+        nameP1<<"SIMPLER_P_3D_"<<NumIter<<".txt";
+        nameP2=nameP1.str();
+
+        nameVx1<<"SIMPLER_Vx_3D_"<<NumIter<<".txt";
+        nameVx2=nameVx1.str();
+
+        nameVy1<<"SIMPLER_Vy_3D_"<<NumIter<<".txt";
+        nameVy2=nameVy1.str();
+
+        nameVz1<<"SIMPLER_Vz_3D_"<<NumIter<<".txt";
+        nameVz2=nameVz1.str();
+
+        //Step 1
+        output2 <<"Iter:" << NumIter <<'\t';
+        //Psedo-Vx========================
+        CFD_pseudoVx3D();
+        //Psedo-Vy========================
+        CFD_pseudoVy3D();
+        //Psedo-Vz========================
+        CFD_pseudoVz3D();
+
+        //Step 2
+        //PSolver========================
+        errP=CFD_PSolver3D();
+        Ploop=NSloop;
+        if(errP>errMax)
+            errMax=errP;
+
+        output2 <<"P:" << Ploop <<'\t'<<errP<<'\t';
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0 ){
+            cout<<"Iter:" << NumIter <<'\t' <<"P:" << Ploop <<'\t'<<errP<<'\t';
+        }
+
+        //Step 3
+        //VxSolver========================
+        errVx=CFD_VxSolver3D();
+        Vxloop=NSloop;
+        if(errVx>errMax)
+            errMax=errVx;
+
+        output2 <<"Vx:" << Vxloop <<'\t'<<"errVx:" <<errVx<<'\t';
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
+            cout<<"Vx:" << Vxloop <<'\t'<<"errVx:"<<errVx<<'\t';
+        }
+
+        //VySolver========================
+        errVy=CFD_VySolver3D();
+        Vyloop=NSloop;
+        if(errVy>errMax)
+            errMax=errVy;
+
+        output2 <<"Vy:" << Vyloop <<'\t'<<"errVy:"<<errVy<<'\t';
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
+            cout<<"Vy:" << Vyloop <<'\t'<<"errVy:"<<errVy<<'\t';
+        }
+
+        //VzSolver========================
+        errVz=CFD_VzSolver3D();
+        Vzloop=NSloop;
+        if(errVz>errMax)
+            errMax=errVz;
+
+        output2 <<"Vz:" << Vzloop <<'\t'<<"errVz:"<<errVz<<'\t';
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
+            cout<<"Vz:" << Vzloop <<'\t'<<"errVz:"<<errVz<<'\t';
+        }
+
+        //Step 4
+        //dPSolver========================
+        errdP=CFD_dPSolver3D();
+        dPloop=NSloop;
+        if(errdP>errMax)
+            errMax=errdP;
+
+        output2 <<"dP:" << dPloop <<'\t'<<"errdP:"<<errdP<<'\t';
+        output2 <<"errMax:" << errMax <<'\t' <<endl;
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
+            cout<<"dP:" << dPloop <<'\t'<<"errdP:"<<errdP<<'\t'<<"errMax:" << errMax <<'\t' <<endl;
+        }
+
+        //Step 5
+        //Correct Vx Vy dP========================
+        CFD_dVxCalculation3D();
+        CFD_dVyCalculation3D();
+        CFD_dVzCalculation3D();
+
+        if( NumIter==1|| NumIter==2 || NumIter==5 || NumIter==10  || NumIter==20  || NumIter==50  || NumIter==100  || NumIter==200 || NumIter==500 || NumIter%1000==0){
+            CFD_VelocityCalculation3D();
+            CFD_PrintVelocity3D(nameP2.c_str());
+        }
+
+        CFD_VxCorrection3D();
+        CFD_VyCorrection3D();
+        CFD_VzCorrection3D();
+        CFD_VxBoundary3D();
+        CFD_VyBoundary3D();
+        CFD_VzBoundary3D();
+
+        //if(NumIter==MaxIter){break;}
+
+    }while( (Vxloop!=1 || Vyloop!=1 || Vzloop!=1) && NumIter<MaxIter);
+
+
+    CFD_VelocityCalculation3D();
+    CFD_PrintVelocity3D("SIMPLER_3D.txt");
+}
+
 double CFD::CFD_VxSolver2D(){
 
     NSloop=0;
@@ -531,6 +656,107 @@ double CFD::CFD_VxGaussSeidelInner2D(int i, int j){
     return alphaVx*Sum/aP+(1-alphaVx)*uk;
 }
 
+
+double CFD::CFD_VxSolver3D(){
+
+    NSloop=0;
+
+    double errVx_new(0),errVx_max(0);
+
+    do{
+        NSloop++;
+
+        errVx_new=CFD_VxGaussSeidel3D();
+
+        if(errVx_max < errVx_new) {errVx_max=errVx_new;}
+
+        //if(NSloop==1 || NSloop%500==0)
+        //cerr <<"Vx:"<< NSloop <<'\t' << errVx_new<<endl;
+
+        if(NSloop==Vxbreak) break;
+
+    }while(errVx_new>SimTolVelocity);
+
+    return errVx_max;
+
+}
+
+double CFD::CFD_VxGaussSeidel3D(){
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=2; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+
+                double Vx=u[pointer].u;
+
+                u[pointer].u=CFD_VxGaussSeidelInner3D(i,j,k);
+
+                double error=abs(u[pointer].u-Vx);
+
+                error=error/(abs(Vx)+1);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    CFD_VxBoundary3D();
+
+    return max_val;
+
+}
+
+double CFD::CFD_VxGaussSeidelInner3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_inn=(px)*(py)*(k) + (px)*(j) + (i-2);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double xstep_p=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double xstep_n=abs((mesh[pointer].coordX-mesh[pointer_inn].coordX)/2);
+    double ystep_p=abs(mesh[pointer].coordY-mesh[pointer_jp].coordY);
+    double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double zstep_p=abs(mesh[pointer].coordZ-mesh[pointer_kp].coordZ);
+    double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+
+    double deltax=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aE+aW+aN+aS+aT+aB;
+
+    double Sum=aE*u[pointer_ip].u+aW*u[pointer_in].u
+              +aN*u[pointer_jp].u+aS*u[pointer_jn].u
+              +aT*u[pointer_kp].u+aB*u[pointer_kn].u
+              +Ax*(CFDmaterial[pointer_in].p-CFDmaterial[pointer].p);
+            //+Source term Bij
+
+    double uk=u[pointer].u;
+
+    return alphaVx*Sum/aP+(1-alphaVx)*uk;
+}
+
 void CFD::CFD_dVxCalculation2D(){
 
 #pragma omp parallel for
@@ -552,6 +778,39 @@ void CFD::CFD_dVxCalculation2D(){
         for (int j=0; j<py; j++) {
             int pointer = (px)*(j) + (i);
             u[pointer].cu=u[pointer].u+u[pointer].du;
+        }
+    }
+}
+
+void CFD::CFD_dVxCalculation3D(){
+
+#pragma omp parallel for
+    for (int i=2; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+                int pointer_kn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_kp =(px)*(py)*(k) + (px)*(j+1) + (i);
+
+                double deltay=abs(mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2;
+                double deltaz=abs(mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2;
+                double Ax=deltay*deltaz;
+
+
+                u[pointer].du=Ax/CFD_uAcoef3D(i,j,k)*(CFDmaterial[pointer_in].dp-CFDmaterial[pointer].dp);
+            }
+        }
+    }
+
+    for (int i=1; i<px; i++) {
+        for (int j=0; j<py; j++) {
+            for (int k=0; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                u[pointer].cu=u[pointer].u+u[pointer].du;
+            }
         }
     }
 }
@@ -605,6 +864,65 @@ void CFD::CFD_pseudoVx2D(){
                     //+Source term Bij
 
             u[pointer].pu=Sum/aP;
+        }
+    }
+}
+
+void CFD::CFD_pseudoVx3D(){
+
+    //Copy u to pseudo-u
+    for (int i=1; i<px; i++) {
+        for (int j=0; j<py; j++) {
+            for (int k=0; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                u[pointer].pu=u[pointer].u;
+            }
+        }
+    }
+    //Calculate pseudo-u
+    for (int i=2; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_inn =(px)*(py)*(k) + (px)*(j) + (i-2);
+                int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+                int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+
+                double xstep_p=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+                double xstep_n=abs((mesh[pointer].coordX-mesh[pointer_inn].coordX)/2);
+                double ystep_p=abs(mesh[pointer].coordY-mesh[pointer_jp].coordY);
+                double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+                double zstep_p=abs(mesh[pointer].coordZ-mesh[pointer_kp].coordZ);
+                double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+                double deltax=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+                double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+                double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+                double Ax=deltay*deltaz;
+                double Ay=deltax*deltaz;
+                double Az=deltax*deltay;
+
+                double aE=eta*Ax/xstep_p;
+                double aW=eta*Ax/xstep_n;
+                double aN=eta*Ay/ystep_p;
+                double aS=eta*Ay/ystep_n;
+                double aT=eta*Az/zstep_p;
+                double aB=eta*Az/zstep_n;
+                double aP=aE+aW+aN+aS+aT+aB;
+
+                double Sum=aE*u[pointer_ip].u+aW*u[pointer_in].u
+                          +aN*u[pointer_jp].u+aS*u[pointer_jn].u
+                          +aT*u[pointer_kp].u+aB*u[pointer_kn].u;
+                    //+Source term Bij
+
+                u[pointer].pu=Sum/aP;
+            }
         }
     }
 }
@@ -694,6 +1012,216 @@ double CFD::CFD_VyGaussSeidelInner2D(int i, int j){
     return alphaVy*Sum/aP+(1-alphaVy)*vk;
 }
 
+
+double CFD::CFD_VySolver3D(){
+
+    NSloop=0;
+
+    double errVy_new(0), errVy_max(0);
+
+    do{
+        NSloop++;
+
+        errVy_new=CFD_VyGaussSeidel3D();
+
+        if(errVy_max <  errVy_new) {errVy_max= errVy_new;}
+
+        //if(NSloop==1 || NSloop%500==0)
+        //cerr <<"Vy:"<< NSloop <<'\t' <<errVy_ratio<<'\t'<<errVy_new<<endl;
+
+        if(NSloop==Vybreak) break;
+
+    }while(errVy_new>SimTolVelocity);
+
+    return errVy_max;
+
+}
+
+double CFD::CFD_VyGaussSeidel3D(){
+
+    /*
+     *Data points:
+     *Total:px
+     *Array:[0]-[px-1]
+     *Total data points for Pressure:for (int i=0; i<px; i++)
+     *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+     *Total data points for Velocity:for (int i=1; i<px; i++)
+     *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+     */
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=1; i<px-1; i++) {
+        for (int j=2; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+
+                double Vy=v[pointer].v;
+
+                v[pointer].v=CFD_VyGaussSeidelInner3D(i,j,k);
+
+                double error=abs(v[pointer].v-Vy);
+
+                error=error/(abs(Vy)+1);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    CFD_VyBoundary3D();
+
+    return max_val;
+
+}
+
+double CFD::CFD_VyGaussSeidelInner3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_jnn =(px)*(py)*(k) + (px)*(j-2) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double xstep_p=abs(mesh[pointer_ip].coordX-mesh[pointer].coordX);
+    double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double ystep_p=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double ystep_n=abs((mesh[pointer].coordY-mesh[pointer_jnn].coordY)/2);
+    double zstep_p=abs(mesh[pointer_kp].coordZ-mesh[pointer].coordZ);
+    double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aN+aS+aE+aW+aT+aB;
+
+    double Sum=aE*v[pointer_ip].v+aW*v[pointer_in].v
+              +aN*v[pointer_jp].v+aS*v[pointer_jn].v
+              +aT*v[pointer_kp].v+aB*v[pointer_kn].v
+              +Ay*(CFDmaterial[pointer_jn].p-CFDmaterial[pointer].p);
+            //+Source term Bij
+
+    double vk=v[pointer].v;
+
+    return alphaVy*Sum/aP+(1-alphaVy)*vk;
+}
+
+
+double CFD::CFD_VzSolver3D(){
+
+    NSloop=0;
+
+    double errVz_new(0), errVz_max(0);
+
+    do{
+        NSloop++;
+
+        errVz_new=CFD_VzGaussSeidel3D();
+
+        if(errVz_max <  errVz_new) {errVz_max= errVz_new;}
+
+        //if(NSloop==1 || NSloop%500==0)
+        //cerr <<"Vy:"<< NSloop <<'\t' <<errVy_ratio<<'\t'<<errVy_new<<endl;
+
+        if(NSloop==Vzbreak) break;
+
+    }while(errVz_new>SimTolVelocity);
+
+    return errVz_max;
+
+}
+
+double CFD::CFD_VzGaussSeidel3D(){
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=2; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+
+                double Vz=w[pointer].w;
+
+                w[pointer].w=CFD_VzGaussSeidelInner3D(i,j,k);
+
+                double error=abs(w[pointer].w-Vz);
+
+                error=error/(abs(Vz)+1);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    CFD_VzBoundary3D();
+
+    return max_val;
+
+}
+
+double CFD::CFD_VzGaussSeidelInner3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+    int pointer_knn =(px)*(py)*(k-2) + (px)*(j) + (i);
+
+    double xstep_p=abs(mesh[pointer_ip].coordX-mesh[pointer].coordX);
+    double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double ystep_p=abs(mesh[pointer_jp].coordY-mesh[pointer].coordY);
+    double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double zstep_p=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+    double zstep_n=abs((mesh[pointer].coordZ-mesh[pointer_knn].coordZ)/2);
+
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aE+aW+aN+aS+aT+aB;
+
+    double Sum=aE*w[pointer_ip].w+aW*w[pointer_in].w
+              +aN*w[pointer_jp].w+aS*w[pointer_jn].w
+              +aT*w[pointer_kp].w+aB*w[pointer_kn].w
+              +Az*(CFDmaterial[pointer_kn].p-CFDmaterial[pointer].p);
+            //+Source term Bij
+
+    double wk=w[pointer].w;
+
+    return alphaVz*Sum/aP+(1-alphaVz)*wk;
+}
+
 void CFD::CFD_dVyCalculation2D(){
 
     /*
@@ -725,6 +1253,79 @@ void CFD::CFD_dVyCalculation2D(){
         for (int j=1; j<py; j++) {
             int pointer = (px)*(j) + (i);
             v[pointer].cv=v[pointer].v+v[pointer].dv;
+        }
+    }
+}
+
+void CFD::CFD_dVyCalculation3D(){
+
+    /*
+     *Data points:
+     *Total:px
+     *Array:[0]-[px-1]
+     *Total data points for Pressure:for (int i=0; i<px; i++)
+     *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+     *Total data points for Velocity:for (int i=1; i<px; i++)
+     *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+     */
+
+#pragma omp parallel for
+    for (int i=1; i<px-1; i++) {
+        for (int j=2; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+                int pointer_kn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_kp =(px)*(py)*(k) + (px)*(j+1) + (i);
+
+                double deltax=abs(mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2;
+                double deltaz=abs(mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2;
+                double Ay=deltax*deltaz;
+
+                v[pointer].dv=Ay*CFD_vAcoef3D(i,j,k)*(CFDmaterial[pointer_jn].dp-CFDmaterial[pointer].dp);
+            }
+        }
+    }
+
+    for (int i=0; i<px; i++) {
+        for (int j=1; j<py; j++) {
+            for (int k=0; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                v[pointer].cv=v[pointer].v+v[pointer].dv;
+            }
+        }
+    }
+}
+
+void CFD::CFD_dVzCalculation3D(){
+
+#pragma omp parallel for
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=2; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+
+                double deltax=abs(mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2;
+                double deltay=abs(mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2;
+                double Az=deltay*deltax;
+
+                w[pointer].dw=Az*CFD_wAcoef3D(i,j,k)*(CFDmaterial[pointer_kn].dp-CFDmaterial[pointer].dp);
+            }
+        }
+    }
+    for (int i=0; i<px; i++) {
+        for (int j=0; j<py; j++) {
+            for (int k=1; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                w[pointer].cw=w[pointer].w+w[pointer].dw;
+            }
         }
     }
 }
@@ -778,6 +1379,124 @@ void CFD::CFD_pseudoVy2D(){
                     //+Source term Bij
 
             v[pointer].pv=Sum/aP;
+        }
+    }
+}
+
+void CFD::CFD_pseudoVy3D(){
+
+    //Copy v to pseudo-v
+    for (int i=0; i<px; i++) {
+        for (int j=1; j<py; j++) {
+            for (int k=0; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                v[pointer].pv=v[pointer].v;
+            }
+        }
+    }
+
+    //Calculate pseudo-v
+    for (int i=1; i<px-1; i++) {
+        for (int j=2; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_jnn=(px)*(py)*(k) + (px)*(j-2) + (i);
+                int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+                int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+                double xstep_p=abs(mesh[pointer].coordX-mesh[pointer_ip].coordX);
+                double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+                double ystep_p=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+                double ystep_n=abs((mesh[pointer].coordY-mesh[pointer_jnn].coordY)/2);
+                double zstep_p=abs(mesh[pointer].coordZ-mesh[pointer_kp].coordZ);
+                double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+                double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+                double deltay=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+                double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+                double Ax=deltay*deltaz;
+                double Ay=deltax*deltaz;
+                double Az=deltax*deltay;
+
+                double aE=eta*Ax/xstep_p;
+                double aW=eta*Ax/xstep_n;
+                double aN=eta*Ay/ystep_p;
+                double aS=eta*Ay/ystep_n;
+                double aT=eta*Az/zstep_p;
+                double aB=eta*Az/zstep_n;
+                double aP=aE+aW+aN+aS+aT+aB;
+
+                double Sum=aE*v[pointer_ip].v+aW*v[pointer_in].v
+                          +aN*v[pointer_jp].v+aS*v[pointer_jn].v
+                          +aT*v[pointer_kp].v+aB*v[pointer_kn].v;
+                        //+Source term Bij
+
+                v[pointer].pv=Sum/aP;
+            }
+        }
+    }
+}
+
+void CFD::CFD_pseudoVz3D(){
+
+    //Copy u to pseudo-w
+    for (int i=0; i<px; i++) {
+        for (int j=0; j<py; j++) {
+            for (int k=1; k<pz; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                w[pointer].pw=w[pointer].w;
+            }
+        }
+    }
+
+    //Calculate pseudo-w
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=2; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+                int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+                int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+                int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+                int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+                int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+                int pointer_knn=(px)*(py)*(k-2) + (px)*(j) + (i);
+
+                double xstep_p=abs(mesh[pointer].coordX-mesh[pointer_ip].coordX);
+                double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+                double ystep_p=abs(mesh[pointer].coordY-mesh[pointer_jp].coordY);
+                double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+                double zstep_p=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+                double zstep_n=abs((mesh[pointer].coordZ-mesh[pointer_knn].coordZ)/2);
+                double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+                double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+                double deltaz=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+
+                double Ax=deltay*deltaz;
+                double Ay=deltax*deltaz;
+                double Az=deltax*deltay;
+
+                double aE=eta*Ax/xstep_p;
+                double aW=eta*Ax/xstep_n;
+                double aN=eta*Ay/ystep_p;
+                double aS=eta*Ay/ystep_n;
+                double aT=eta*Az/zstep_p;
+                double aB=eta*Az/zstep_n;
+                double aP=aE+aW+aN+aS+aT+aB;
+
+                double Sum=aE*w[pointer_ip].w+aW*w[pointer_in].w
+                          +aN*w[pointer_jp].w+aS*w[pointer_jn].w
+                          +aT*w[pointer_kp].w+aB*w[pointer_kn].w;
+                        //+Source term Bij
+
+                w[pointer].pw=Sum/aP;
+            }
         }
     }
 }
@@ -867,6 +1586,115 @@ double CFD::CFD_dPGaussSeidelInner2D(int i, int j){
     return  Sum/aP;
 }
 
+double CFD::CFD_dPSolver3D(){
+
+    NSloop=0;
+
+    double errdP_new(0),errdP_max(0);
+
+    do{
+        NSloop++;
+
+        errdP_new=CFD_dPGaussSeidel3D();
+
+        if(errdP_max < errdP_new) {errdP_max=errdP_new;}
+
+        //if(NSloop==1 || NSloop%500==0)
+        //cerr <<"dP:"<< NSloop <<'\t'<<errdP_new<<endl;
+
+        if(NSloop==dPbreak) break;
+
+    }while(errdP_new>SimTolPressure);
+
+    return errdP_max;
+}
+
+double CFD::CFD_dPGaussSeidel3D(){
+
+    /*
+     *Data points:
+     *Total:px
+     *Array:[0]-[px-1]
+     *Total data points for Pressure:for (int i=0; i<px; i++)
+     *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+     *Total data points for Velocity:for (int i=1; i<px; i++)
+     *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+     */
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+
+                double dP=CFDmaterial[pointer].dp;
+
+                CFDmaterial[pointer].dp=CFD_dPGaussSeidelInner3D(i,j,k);
+
+                double error=abs(CFDmaterial[pointer].dp-dP);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    return max_val;
+
+}
+
+double CFD::CFD_dPGaussSeidelInner3D(int i, int j, int k){
+
+    //int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aW=0,aE=0,aN=0,aS=0,aT=0,aB=0,aP=0;
+
+    if(i>1){
+        aW=Drho*Ax/CFD_uAcoef3D(i,j,k)*Ax;   //a(I-1,J,K)
+    }
+    if(j>1){
+        aS=Drho*Ay/CFD_vAcoef3D(i,j,k)*Ay;   //a(I,J-1,K)
+    }
+    if(k>1){
+        aB=Drho*Az/CFD_wAcoef3D(i,j,k)*Az;   //a(I,J,K-1)
+    }
+    if(i<px-2){
+        aE=Drho*Ax/CFD_uAcoef3D(i+1,j,k)*Ax; //a(I+1,J,K)
+    }
+    if(j<py-2){
+        aN=Drho*Ay/CFD_vAcoef3D(i,j+1,k)*Ay; //a(I,J+1,K)
+    }
+    if(k<pz-2){
+        aT=Drho*Az/CFD_wAcoef3D(i,j,k+1)*Az; //a(I,J,K+1)
+    }
+
+    aP=aN+aS+aE+aW+aT+aB;
+
+    double Sum= aE*CFDmaterial[pointer_ip].dp+aW*CFDmaterial[pointer_in].dp+
+                aN*CFDmaterial[pointer_jp].dp+aS*CFDmaterial[pointer_jn].dp+
+                aT*CFDmaterial[pointer_kp].dp+aB*CFDmaterial[pointer_kn].dp+
+                CFD_BPcoef3D(i,j,k);
+
+    return  Sum/aP;
+}
+
 double CFD::CFD_PSolver2D(){
 
     NSloop=0;
@@ -950,7 +1778,103 @@ double CFD::CFD_PGaussSeidelInner2D(int i, int j){
     return Sum/aP;
 }
 
+double CFD::CFD_PSolver3D(){
 
+    NSloop=0;
+
+    double errP_new(0),errP_max(0);
+
+    do{
+        NSloop++;
+
+        errP_new=CFD_PGaussSeidel3D();
+
+        if(errP_max < errP_new) {errP_max=errP_new;}
+
+        if(NSloop==Pbreak) break;
+        //cerr <<"P:"<< NSloop <<'\t' <<errP_new<<endl;
+
+    }while(errP_new>SimTolPressure);
+
+    return errP_max;
+}
+
+double CFD::CFD_PGaussSeidel3D(){
+
+    double max_val=0;
+
+#pragma omp parallel for reduction(max:max_val)
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+
+                double P=CFDmaterial[pointer].p;
+
+                CFDmaterial[pointer].p=CFD_PGaussSeidelInner3D(i,j,k);
+
+                double error=abs(CFDmaterial[pointer].p-P);
+
+                error=error/(abs(P)+1);
+
+                if(error>max_val)
+                    max_val=error;
+            }
+        }
+    }
+
+    return max_val;
+
+}
+
+double CFD::CFD_PGaussSeidelInner3D(int i, int j, int k){
+
+    //int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aW=0,aE=0,aN=0,aS=0,aT=0,aB=0,aP=0;
+
+    if(i>1){
+        aW=Drho*Ax/CFD_uAcoef3D(i,j,k)*Ax;   //a(I-1,J,K)
+    }
+    if(i<px-2){
+        aE=Drho*Ax/CFD_uAcoef3D(i+1,j,k)*Ax; //a(I+1,J,K)
+    }
+    if(j>1){
+        aS=Drho*Ay/CFD_vAcoef3D(i,j,k)*Ay;   //a(I,J-1,K)
+    }
+    if(j<py-2){
+        aN=Drho*Ay/CFD_vAcoef3D(i,j+1,k)*Ay; //a(I,J+1,K)
+    }
+    if(k>1){
+        aB=Drho*Az/CFD_wAcoef3D(i,j,k)*Az;   //a(I,J,K-1)
+    }
+    if(k<pz-2){
+        aT=Drho*Az/CFD_wAcoef3D(i,j,k+1)*Az; //a(I,J,K+1)
+    }
+
+    aP=aN+aS+aE+aW+aT+aB;
+
+    double Sum= aE*CFDmaterial[pointer_ip].p+aW*CFDmaterial[pointer_in].p+
+                aN*CFDmaterial[pointer_jp].p+aS*CFDmaterial[pointer_jn].p+
+                aT*CFDmaterial[pointer_kp].p+aB*CFDmaterial[pointer_kn].p+
+                CFD_Bcoef3D(i,j,k);
+
+    return  Sum/aP;
+}
 
 void CFD::CFD_PrintVx2D(const char *path){
 
@@ -1377,6 +2301,23 @@ void CFD::CFD_ReadPotential3D(const char *path){
     input.close();
 }
 
+void CFD::CFD_MaxSpeed(){
+
+    double max=0;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            for (int k=0;k<pz;k++){
+
+                int pointer = (px)*(py)*(k) + (px)*(j) + (i);
+                int temp = sqrt(pow(CFDmaterial[pointer].ui,2)+pow(CFDmaterial[pointer].vi,2)+pow(CFDmaterial[pointer].wi,2));
+                if(temp > max)
+                    max=temp;
+            }
+        }
+    }
+    cout << "MaxSpeed=" << max/1000 <<"um/s"<< endl;
+}
 
 void CFD::CFD_VxCorrection2D(){
 
@@ -1406,6 +2347,54 @@ void CFD::CFD_PCorrection2D(){
     }
 }
 
+
+void CFD::CFD_VxCorrection3D(){
+
+    /*
+     *Data points:
+     *Total:px
+     *Array:[0]-[px-1]
+     *Total data points for Pressure:for (int i=0; i<px; i++)
+     *Inner data points for Pressure:for (int i=1; i<px-1; i++)
+     *Total data points for Velocity:for (int i=1; i<px; i++)
+     *Inner data points for Velocity:for (int i=2; i<px-1; i++)
+     */
+
+    // u correction
+    for (int i=2; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                u[pointer].u=u[pointer].cu;
+            }
+        }
+    }
+}
+
+void CFD::CFD_VyCorrection3D(){
+    // v correction
+    for (int i=1; i<px-1; i++) {
+        for (int j=2; j<py-1; j++) {
+            for (int k=1; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                v[pointer].v=v[pointer].cv;
+            }
+        }
+    }
+}
+
+void CFD::CFD_VzCorrection3D(){
+    // w correction
+    for (int i=1; i<px-1; i++) {
+        for (int j=1; j<py-1; j++) {
+            for (int k=2; k<pz-1; k++){
+                int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+                w[pointer].w=w[pointer].cw;
+            }
+        }
+    }
+}
+
 void CFD::CFD_VxBoundary2D(){ // all boundary conditions are not finished yet
 
     if(ACDCPhaseFlag==1){
@@ -1424,6 +2413,15 @@ void CFD::CFD_VyBoundary2D(){ // all boundary conditions are not finished yet
     if(ACDCPhaseFlag==2){
         CFD_VyBoundaryAC2D();
     }
+}
+
+void CFD::CFD_VxBoundary3D(){ // all boundary conditions are not finished yet
+}
+
+void CFD::CFD_VyBoundary3D(){ // all boundary conditions are not finished yet
+}
+
+void CFD::CFD_VzBoundary3D(){ // all boundary conditions are not finished yet
 }
 
 void CFD::CFD_VxBoundaryDC2D(){ // all boundary conditions are not finished yet
@@ -1929,6 +2927,159 @@ void CFD::ACPoissonBC3D(){
     }
 }
 
+double CFD::CFD_uAcoef3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_inn=(px)*(py)*(k) + (px)*(j) + (i-2);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double xstep_p=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double xstep_n=abs((mesh[pointer].coordX-mesh[pointer_inn].coordX)/2);
+    double ystep_p=abs(mesh[pointer].coordY-mesh[pointer_jp].coordY);
+    double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double zstep_p=abs(mesh[pointer].coordZ-mesh[pointer_kp].coordZ);
+    double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+    double deltax=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aE+aW+aN+aS+aT+aB;
+
+    return aP;
+}
+
+double CFD::CFD_vAcoef3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_jnn=(px)*(py)*(k) + (px)*(j-2) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double xstep_p=abs(mesh[pointer].coordX-mesh[pointer_ip].coordX);
+    double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double ystep_p=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double ystep_n=abs((mesh[pointer].coordY-mesh[pointer_jnn].coordY)/2);
+    double zstep_p=abs(mesh[pointer].coordZ-mesh[pointer_kp].coordZ);
+    double zstep_n=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aE+aW+aN+aS+aT+aB;
+
+    return aP;
+}
+
+double CFD::CFD_wAcoef3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+    int pointer_knn=(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double xstep_p=abs(mesh[pointer].coordX-mesh[pointer_ip].coordX);
+    double xstep_n=abs(mesh[pointer].coordX-mesh[pointer_in].coordX);
+    double ystep_p=abs(mesh[pointer].coordY-mesh[pointer_jp].coordY);
+    double ystep_n=abs(mesh[pointer].coordY-mesh[pointer_jn].coordY);
+    double zstep_p=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+    double zstep_n=abs((mesh[pointer].coordZ-mesh[pointer_knn].coordZ)/2);
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs(mesh[pointer].coordZ-mesh[pointer_kn].coordZ);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    double aE=eta*Ax/xstep_p;
+    double aW=eta*Ax/xstep_n;
+    double aN=eta*Ay/ystep_p;
+    double aS=eta*Ay/ystep_n;
+    double aT=eta*Az/zstep_p;
+    double aB=eta*Az/zstep_n;
+    double aP=aE+aW+aN+aS+aT+aB;
+
+    return aP;
+}
+
+double CFD::CFD_BPcoef3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    return  Drho*(u[pointer].u*Ax-u[pointer_ip].u*Ax+
+                  v[pointer].v*Ay-v[pointer_jp].v*Ay+
+                  w[pointer].w*Az-w[pointer_kp].w*Az);
+}
+
+double CFD::CFD_Bcoef3D(int i, int j, int k){
+
+    int pointer =(px)*(py)*(k) + (px)*(j) + (i);
+    int pointer_ip =(px)*(py)*(k) + (px)*(j) + (i+1);
+    int pointer_in =(px)*(py)*(k) + (px)*(j) + (i-1);
+    int pointer_jp =(px)*(py)*(k) + (px)*(j+1) + (i);
+    int pointer_jn =(px)*(py)*(k) + (px)*(j-1) + (i);
+    int pointer_kp =(px)*(py)*(k+1) + (px)*(j) + (i);
+    int pointer_kn =(px)*(py)*(k-1) + (px)*(j) + (i);
+
+    double deltax=abs((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)/2);
+    double deltay=abs((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)/2);
+    double deltaz=abs((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)/2);
+
+    double Ax=deltay*deltaz;
+    double Ay=deltax*deltaz;
+    double Az=deltax*deltay;
+
+    return  Drho*(u[pointer].pu*Ax-u[pointer_ip].pu*Ax+
+                  v[pointer].pv*Ay-v[pointer_jp].pv*Ay+
+                  w[pointer].pw*Az-w[pointer_kp].pw*Az);
+}
 
 
 

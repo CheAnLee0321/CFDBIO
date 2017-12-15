@@ -1,30 +1,31 @@
-#ifndef DDMODEL_H
-#define DDMODEL_H
+#ifndef ACDD_H
+#define ACDD_H
 #include "fvmesh.h"
+#include <complex>
 
-struct Semiconductor {
+struct Semiconductor_complex {
     double k;   // permitivitty
     double dop; // doping, -Nai Ndi
-    double phi; // potential, Ei
-    double u;   // quasi-fermi level, exp(-Ef/Vt)
-    double v;   //                  , exp(Ef/Vt)
-    double r;   // recombination rate, SRH
-    double rho; // charge density, C/cm3
-    double Crho;// charge density, C/cm3
+    complex <double> phi; // potential, Ei
+    complex <double> u;   // quasi-fermi level, exp(-Ef/Vt)
+    complex <double> v;   //                  , exp(Ef/Vt)
+    complex <double> r;   // recombination rate, SRH
+    complex <double> rho; // charge density, C/cm3
+    complex <double> Crho;// charge density, C/cm3
     double mun; // mobility, nm^2/v.s
     double mup;
     double tau;
-    double Ex;  // electric field
-    double Ey;
-    double Ez;
+    complex <double> Ex;  // electric field
+    complex <double> Ey;
+    complex <double> Ez;
     double Type;// Material Type 1=channel, 2=insulator, 3=electrolyte, 4=sub, 5=analyte;
 };
 
-class DDmodel : public FVMesh{
+class ACDD : public FVMesh{
 
 public:
-    DDmodel();
-    ~DDmodel();
+    ACDD();
+    ~ACDD();
 
     //Process
     void IdVG2D();
@@ -40,7 +41,7 @@ public:
     //void RefineGComparison3D_Dotshift();
 
     // DD parameter setting
-    void DDmodelParameterSet();
+    void ACDDmodelParameterSet();
 
     //DD Initial Guess
     void DDInitialGuess2D();
@@ -58,37 +59,37 @@ public:
     //Poisson Solver
     double PoissonSolver2D();
     double PoissonGaussSeidel2D();
-    double PoissonGaussSeidelInner2D(int i, int j);
+    complex <double> PoissonGaussSeidelInner2D(int i, int j);
 
     double PoissonSolver3D();
     double PoissonGaussSeidel3D();
-    double PoissonGaussSeidelInner3D(int i, int j, int k);
+    complex <double> PoissonGaussSeidelInner3D(int i, int j, int k);
 
     //ElectronContinuity(EC)
     double ECSolver2D();
     double ECTypeA2D();
     double ECTypeB2D();
-    double ECInner2D(int i, int j);
+    complex <double> ECInner2D(int i, int j);
 
     double ECSolver3D();
     double ECTypeA3D();
     double ECTypeB3D();
     double EC1NWR3D(); // NWR only
     double EC2NWR3D(); // NWR only
-    double ECInner3D(int i, int j, int k);
+    complex <double> ECInner3D(int i, int j, int k);
 
     //HoleContinuity(HC)
     double HCSolver2D();
     double HCTypeA2D();
     double HCTypeB2D();
-    double HCInner2D(int i, int j);
+    complex <double> HCInner2D(int i, int j);
 
     double HCSolver3D();
     double HCTypeA3D();
     double HCTypeB3D();
     double HC1NWR3D(); // NWR only
     double HC2NWR3D(); // NWR only
-    double HCInner3D(int i, int j, int k);
+    complex <double> HCInner3D(int i, int j, int k);
 
     //BC
     void PoissonBC2D();
@@ -135,16 +136,16 @@ public:
     void Jcal2D_MOSFET();
     void Jcal2D_ISFET();
 
-    void JcalS2D_PN(double &JSn, double &JSp);
-    void JcalD2D_PN(double &JDn, double &JDp);
+    void JcalS2D_PN(complex <double> &JSn, complex <double> &JSp);
+    void JcalD2D_PN(complex <double> &JDn, complex <double> &JDp);
 
-    void JcalS2D_MOSFET(double &JSn, double &JSp);
-    void JcalD2D_MOSFET(double &JDn, double &JDp);
-    void JcalB2D_MOSFET(double &JBn, double &JBp);
+    void JcalS2D_MOSFET(complex <double> &JSn, complex <double> &JSp);
+    void JcalD2D_MOSFET(complex <double> &JDn, complex <double> &JDp);
+    void JcalB2D_MOSFET(complex <double> &JBn, complex <double> &JBp);
 
-    void JcalS2D_ISFET(double &JSn, double &JSp);
-    void JcalD2D_ISFET(double &JDn, double &JDp);
-    void JcalB2D_ISFET(double &JBn, double &JBp);
+    void JcalS2D_ISFET(complex <double> &JSn, complex <double> &JSp);
+    void JcalD2D_ISFET(complex <double> &JDn, complex <double> &JDp);
+    void JcalB2D_ISFET(complex <double> &JBn, complex <double> &JBp);
 
     void Jcal3D();
     void Jcal3D_PN();
@@ -153,22 +154,22 @@ public:
     void Jcal3D_1NWR();
     void Jcal3D_2NWR();
 
-    void JcalS3D_PN(double &JSn, double &JSp);
-    void JcalD3D_PN(double &JDn, double &JDp);
+    void JcalS3D_PN(complex <double> &JSn, complex <double> &JSp);
+    void JcalD3D_PN(complex <double> &JDn, complex <double> &JDp);
 
-    void JcalS3D_MOSFET(double &JSn, double &JSp);
-    void JcalD3D_MOSFET(double &JDn, double &JDp);
-    void JcalB3D_MOSFET(double &JBn, double &JBp);
+    void JcalS3D_MOSFET(complex <double> &JSn, complex <double> &JSp);
+    void JcalD3D_MOSFET(complex <double> &JDn, complex <double> &JDp);
+    void JcalB3D_MOSFET(complex <double> &JBn, complex <double> &JBp);
 
-    void JcalS3D_ISFET(double &JSn, double &JSp);
-    void JcalD3D_ISFET(double &JDn, double &JDp);
-    void JcalB3D_ISFET(double &JBn, double &JBp);
+    void JcalS3D_ISFET(complex <double> &JSn, complex <double> &JSp);
+    void JcalD3D_ISFET(complex <double> &JDn, complex <double> &JDp);
+    void JcalB3D_ISFET(complex <double> &JBn, complex <double> &JBp);
 
-    void JcalS3D_NWR1(double &JSn, double &JSp); //NWR1
-    void JcalD3D_NWR1(double &JDn, double &JDp);
+    void JcalS3D_NWR1(complex <double> &JSn, complex <double> &JSp); //NWR1
+    void JcalD3D_NWR1(complex <double> &JDn, complex <double> &JDp);
 
-    void JcalS3D_NWR2(double &JSn, double &JSp); //NWR2
-    void JcalD3D_NWR2(double &JDn, double &JDp);
+    void JcalS3D_NWR2(complex <double> &JSn, complex <double> &JSp); //NWR2
+    void JcalD3D_NWR2(complex <double> &JDn, complex <double> &JDp);
 
     //Efield Calculations
     void EfieldCalculation2D();
@@ -183,8 +184,8 @@ public:
     double mupCal(double T,double dopping, int f);
     double tauNCal(double dopping);
     double tauPCal(double dopping);
-    double SRHrecomb2D(int i, int j);
-    double SRHrecomb3D(int i, int j, int k);
+    complex <double> SRHrecomb2D(int i, int j);
+    complex <double> SRHrecomb3D(int i, int j, int k);
 
     //Add Analyte
     void AddDotString3D(double Yshift);
@@ -197,7 +198,7 @@ public:
 private:
 
     //Tool Function
-    double Bern(double, double);
+    complex <double> Bern(complex <double>, complex <double>);
     void BernoulliX();
     void DDInitialize();
 
@@ -207,7 +208,7 @@ protected:
     //Drift Diffusion Model and Poisson
     //*********************************
 
-    Semiconductor *DDmaterial;
+    Semiconductor_complex *DDmaterial;
 
     double SimTolPoisson, SimTolEC, SimTolHC;
     int DD_loop, maxIter;
@@ -217,7 +218,7 @@ protected:
     double ZnO_ni_m, ZnO_ni_cm, ZnO_ni_nm;
     double ni_m, ni_cm, ni_nm;
     double mun_semi, mup_semi, mun_sub, mup_sub;
-    double volS, volDe, volDs, volDi, volD, volB, volGe, volGs, volGi, volG, wfG;
+    complex <double> volS, volDe, volDs, volDi, volD, volB, volGe, volGs, volGi, volG, wfG;
     double mun_electrolyte, mup_electrolyte, C0, CC0;
     double AnalyteRadius, AnalyteValence, ShiftDistanceY,ReceptorLength,AnalytePermittivity;
     int SubstrateTOP=0,ElectrolyteBottom=0;
@@ -244,5 +245,4 @@ protected:
 
 };
 
-
-#endif // DDMODEL_H
+#endif // ACDD_H

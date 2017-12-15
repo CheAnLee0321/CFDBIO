@@ -57,20 +57,31 @@ public:
     void CFD_NSInitialGuessComplex3D();
     void CFD_SIMPLE2D();
     void CFD_SIMPLER2D();
+    void CFD_SIMPLER3D();
 
     //Vx
     double CFD_VxSolver2D();
     double CFD_VxGaussSeidel2D();
     double CFD_VxGaussSeidelInner2D(int i, int j);
+    double CFD_VxSolver3D();
+    double CFD_VxGaussSeidel3D();
+    double CFD_VxGaussSeidelInner3D(int i, int j, int k);
     void   CFD_dVxCalculation2D();
+    void   CFD_dVxCalculation3D();
     void   CFD_pseudoVx2D();
+    void   CFD_pseudoVx3D();
 
     //Vy
     double CFD_VySolver2D();
     double CFD_VyGaussSeidel2D();
     double CFD_VyGaussSeidelInner2D(int i, int j);
+    double CFD_VySolver3D();
+    double CFD_VyGaussSeidel3D();
+    double CFD_VyGaussSeidelInner3D(int i, int j, int k);
     void   CFD_dVyCalculation2D();
+    void   CFD_dVyCalculation3D();
     void   CFD_pseudoVy2D();
+    void   CFD_pseudoVy3D();
 
     //Vz
     double CFD_VzSolver3D();
@@ -83,30 +94,25 @@ public:
     double CFD_dPSolver2D();
     double CFD_dPGaussSeidel2D();
     double CFD_dPGaussSeidelInner2D(int i, int j);
+    double CFD_dPSolver3D();
+    double CFD_dPGaussSeidel3D();
+    double CFD_dPGaussSeidelInner3D(int i, int j, int k);
 
     //P
     double CFD_PSolver2D();
     double CFD_PGaussSeidel2D();
     double CFD_PGaussSeidelInner2D(int i, int j);
-
-    //coef
-    double CFD_uAcoef2D(int i, int j);
-    double CFD_vAcoef2D(int i, int j);
-    double CFD_BPcoef2D(int i, int j);
-    double CFD_Bcoef2D(int i, int j);
+    double CFD_PSolver3D();
+    double CFD_PGaussSeidel3D();
+    double CFD_PGaussSeidelInner3D(int i, int j, int k);
 
     //Correction
     void CFD_VxCorrection2D();
     void CFD_VyCorrection2D();
     void CFD_PCorrection2D();
-
-    //Boundary
-    void CFD_VxBoundary2D();
-    void CFD_VyBoundary2D();
-    void CFD_VxBoundaryDC2D();
-    void CFD_VyBoundaryDC2D();
-    void CFD_VxBoundaryAC2D();
-    void CFD_VyBoundaryAC2D();
+    void CFD_VxCorrection3D();
+    void CFD_VyCorrection3D();
+    void CFD_VzCorrection3D();
 
     //Calculation
     void CFD_VelocityCalculation2D();
@@ -123,6 +129,7 @@ public:
     void CFD_ReadMaterialComplex3D(const char *path);
     void CFD_ReadVelocity3D(const char *path);
     void CFD_ReadPotential3D(const char *path);
+    void CFD_MaxSpeed();
 
     //CFD Poisson Solver
     void CFD_Initialize();
@@ -139,6 +146,30 @@ public:
     void ACPoissonBC3D();
 
     int ACDCPhaseFlag; // DC=1, AC=2
+
+private:
+
+    //Boundary
+    void CFD_VxBoundary2D();
+    void CFD_VyBoundary2D();
+    void CFD_VxBoundaryDC2D();
+    void CFD_VyBoundaryDC2D();
+    void CFD_VxBoundaryAC2D();
+    void CFD_VyBoundaryAC2D();
+    void CFD_VxBoundary3D();
+    void CFD_VyBoundary3D();
+    void CFD_VzBoundary3D();
+
+    //coef
+    double CFD_uAcoef2D(int i, int j);
+    double CFD_vAcoef2D(int i, int j);
+    double CFD_BPcoef2D(int i, int j);
+    double CFD_Bcoef2D(int i, int j);
+    double CFD_uAcoef3D(int i, int j, int k);
+    double CFD_vAcoef3D(int i, int j, int k);
+    double CFD_wAcoef3D(int i, int j, int k);
+    double CFD_BPcoef3D(int i, int j, int k);
+    double CFD_Bcoef3D(int i, int j, int k);
 
 protected:
 

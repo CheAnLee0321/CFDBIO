@@ -24,20 +24,20 @@ int main()
     test->FVMesh_PrintMeshParameter3D();
     test->CFD_NSParameter();
     test->CFD_ACPoissonInitialGuess3D();
-    //test->CFD_PrintMaterialComplex3D("Initial.dat");
-    //test->CFD_PoissonSolverComplex3D();
+    test->CFD_PrintMaterialComplex3D("Initial.dat");
+    test->CFD_PoissonSolverComplex3D();
     //test->CFD_PrintMaterialComplex3D("AfterPoisson.dat");
     //test->CFD_ReadMaterialComplex3D("AfterPoisson.dat");
-    //test->CFD_PrintMaterialComplex3D("ReadMaterial.dat");
-    //test->CFD_PrintPotential3D("Potential.dat");
-    test->CFD_ReadPotential3D("Potential.dat");
-    //test->CFD_PrintPotential3D("ReadPotential.dat");
+    test->CFD_PrintPotential3D("Potential.dat");
+    //test->CFD_ReadPotential3D("Potential.dat");
     test->CFD_NSInitialGuessComplex3D();
     test->CFD_VelocityCalculation3D();
-    test->CFD_PrintVelocity3D("Velocity.dat");
-    //test->CFD_ReadVelocity3D("Velocity.dat");
-    //test->CFD_ReadPotential3D("Potential.dat");
-    //test->CFD_PrintVelocity3D("ReadVelocity.dat");
+    test->CFD_MaxSpeed();
+    test->CFD_PrintVelocity3D("InitialVelocity.dat");
+    //test->CFD_ReadVelocity3D("InitialVelocity.dat");
+    test->CFD_SIMPLER3D();
+
+
     /*
     CFD *test = new CFD();
     test->FVMesh_CFDStructurePatameterSet2D();

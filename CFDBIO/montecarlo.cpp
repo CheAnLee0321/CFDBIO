@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <math.h>
+#include <time.h>
 
 #include "montecarlo.h"
 #include "Parameter.h"
@@ -42,11 +43,11 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
 
     WireN=SensorWidth/(WireWidth+WireSpacing);
 
-    t=1000000;        //time, s.
-    tau=t*1e-4;   //time step
+    t=1000;        //time, s.
+    tau=1e-4;   //time step
     TN=t/tau+1; //nubmer of steps
 
-    AnalyteRadius_m=20e-9;     //Particle radius [m]
+    AnalyteRadius_m=10e-9;     //Particle radius [m]
 
     AnalyteRadius_nm=AnalyteRadius_m*1e9;
     AnalyteMass=150*1000*1.6605e-27; //1.6605e-27*1000*150; //mass, kg. 1 Dalton = 1.6605e-27 kg

@@ -2,17 +2,17 @@
 #include <fstream>
 #include <sstream>
 
-#include "ddmodel.h"
+#include "acdd.h"
 #include "Parameter.h"
 
-DDmodel::DDmodel(){
+ACDD::ACDD(){
 }
 
-DDmodel::~DDmodel(){
+ACDD::~ACDD(){
 }
 
 // DD model parameter setting
-void DDmodel::DDmodelParameterSet(){
+void ACDD::ACDDmodelParameterSet(){
 
     BernoulliX();
 
@@ -43,13 +43,13 @@ void DDmodel::DDmodelParameterSet(){
 
     SiNc=2*pow(2*M_PI*Si_me*m0*kb*Tamb/pow(h,2),1.5);
     SiNv=2*pow(2*M_PI*Si_mh*m0*kb*Tamb/pow(h,2),1.5);
-    Si_ni_m=sqrt(SiNc*SiNv)*exp((-1)*Si_Eg/(2*VT));
+    Si_ni_m=sqrt(SiNc*SiNv)*exp((-1.0)*Si_Eg/(2*VT));
     Si_ni_cm=Si_ni_m*1e-6;
     Si_ni_nm=Si_ni_m*1e-27;
 
     ZnONc=2*pow(2*M_PI*ZnO_me*m0*kb*Tamb/pow(h,2),1.5);
     ZnONv=2*pow(2*M_PI*ZnO_mh*m0*kb*Tamb/pow(h,2),1.5);
-    ZnO_ni_m=sqrt(ZnONc*ZnONv)*exp((-1)*ZnO_Eg/(2*VT));
+    ZnO_ni_m=sqrt(ZnONc*ZnONv)*exp((-1.0)*ZnO_Eg/(2*VT));
     ZnO_ni_cm=ZnO_ni_m*1e-6;
     ZnO_ni_nm=ZnO_ni_m*1e-27;
 
@@ -85,9 +85,9 @@ void DDmodel::DDmodelParameterSet(){
 
 }
 
-void DDmodel::DDInitialGuess2D(){
+void ACDD::DDInitialGuess2D(){
 
-    DDmaterial=new Semiconductor [L];
+    DDmaterial=new Semiconductor_complex [L];
     DDInitialize();
 
     switch(StructureFlag){
@@ -108,7 +108,7 @@ void DDmodel::DDInitialGuess2D(){
 
 }
 
-void DDmodel::DDInitialGuessPNJunction2D(){
+void ACDD::DDInitialGuessPNJunction2D(){
 
 #pragma omp parallel for
     for(int i=0;i<L;i++){
@@ -126,7 +126,7 @@ void DDmodel::DDInitialGuessPNJunction2D(){
             //P+
             DDmaterial[pointer].dop=-Nai;
             DDmaterial[pointer].phi=(volD-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-            DDmaterial[pointer].u=exp((-1)*volD/VT);
+            DDmaterial[pointer].u=exp((-1.0)*volD/VT);
             DDmaterial[pointer].v=exp(volD/VT);
             DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
             DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -138,7 +138,7 @@ void DDmodel::DDInitialGuessPNJunction2D(){
                 //N+
                 DDmaterial[pointer].dop=Ndi;
                 DDmaterial[pointer].phi=(volS+VT*log(0.5*Ndi+sqrt(pow(0.5*Ndi,2)+1)));
-                DDmaterial[pointer].u=exp((-1)*volS/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                 DDmaterial[pointer].v=exp(volS/VT);
                 DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                 DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -149,7 +149,7 @@ void DDmodel::DDInitialGuessPNJunction2D(){
     }
 }
 
-void DDmodel::DDInitialGuessMOSFET2D(){
+void ACDD::DDInitialGuessMOSFET2D(){
 
 #pragma omp parallel for
     for(int i=0;i<L;i++){
@@ -167,7 +167,7 @@ void DDmodel::DDInitialGuessMOSFET2D(){
             //P+
             DDmaterial[pointer].dop=-Nai;
             DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-            DDmaterial[pointer].u=exp((-1)*volB/VT);
+            DDmaterial[pointer].u=exp((-1.0)*volB/VT);
             DDmaterial[pointer].v=exp(volB/VT);
             DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
             DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -180,7 +180,7 @@ void DDmodel::DDInitialGuessMOSFET2D(){
                     //N+
                     DDmaterial[pointer].dop=NdPlusi;
                     DDmaterial[pointer].phi=(volS+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volS/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                     DDmaterial[pointer].v=exp(volS/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -195,7 +195,7 @@ void DDmodel::DDInitialGuessMOSFET2D(){
                     //N+
                     DDmaterial[pointer].dop=NdPlusi;
                     DDmaterial[pointer].phi=(volD+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volD/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                     DDmaterial[pointer].v=exp(volD/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -207,7 +207,7 @@ void DDmodel::DDInitialGuessMOSFET2D(){
     }
 }
 
-void DDmodel::DDInitialGuessISFET2D(){
+void ACDD::DDInitialGuessISFET2D(){
 
 #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -222,7 +222,7 @@ void DDmodel::DDInitialGuessISFET2D(){
                 DDmaterial[pointer].k=Si_permi;
                 DDmaterial[pointer].dop=-Nai;
                 DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                DDmaterial[pointer].u=exp((-1)*volB/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volB/VT);
                 DDmaterial[pointer].v=exp(volB/VT);
                 DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                 DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -239,7 +239,7 @@ void DDmodel::DDInitialGuessISFET2D(){
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=NdPlusi;
                     DDmaterial[pointer].phi=(volS+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volS/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                     DDmaterial[pointer].v=exp(volS/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -253,7 +253,7 @@ void DDmodel::DDInitialGuessISFET2D(){
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=NdPlusi;
                     DDmaterial[pointer].phi=(volD+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volD/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                     DDmaterial[pointer].v=exp(volD/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -268,7 +268,7 @@ void DDmodel::DDInitialGuessISFET2D(){
                 DDmaterial[pointer].k=SiO2_permi;
                 DDmaterial[pointer].phi=volG;
                 DDmaterial[pointer].dop=0;
-                DDmaterial[pointer].u=exp((-1)*volG/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                 DDmaterial[pointer].v=exp(volG/VT);
                 DDmaterial[pointer].mun=0;
                 DDmaterial[pointer].mup=0;
@@ -282,7 +282,7 @@ void DDmodel::DDInitialGuessISFET2D(){
                 DDmaterial[pointer].k=Water_permi;
                 DDmaterial[pointer].phi=volG;
                 DDmaterial[pointer].dop=0;
-                DDmaterial[pointer].u=exp((-1)*volG/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                 DDmaterial[pointer].v=exp(volG/VT);
                 DDmaterial[pointer].mun=0.12*1e18;
                 DDmaterial[pointer].mup=0.12*1e18;
@@ -317,9 +317,9 @@ void DDmodel::DDInitialGuessISFET2D(){
     }
 }
 
-void DDmodel::DDInitialGuess3D(){
+void ACDD::DDInitialGuess3D(){
 
-    DDmaterial=new Semiconductor [L];
+    DDmaterial=new Semiconductor_complex [L];
     DDInitialize();
 
     switch(StructureFlag){
@@ -349,7 +349,7 @@ void DDmodel::DDInitialGuess3D(){
 
 }
 
-void DDmodel::DDInitialGuessPNJunction3D(){
+void ACDD::DDInitialGuessPNJunction3D(){
 
     StructureFlag=1;
 
@@ -370,7 +370,7 @@ void DDmodel::DDInitialGuessPNJunction3D(){
                 //P+
                 DDmaterial[pointer].dop=-Nai;
                 DDmaterial[pointer].phi=(volD-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                DDmaterial[pointer].u=exp((-1)*volD/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                 DDmaterial[pointer].v=exp(volD/VT);
                 DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                 DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -382,7 +382,7 @@ void DDmodel::DDInitialGuessPNJunction3D(){
                     //N+
                     DDmaterial[pointer].dop=Ndi;
                     DDmaterial[pointer].phi=(volS+VT*log(0.5*Ndi+sqrt(pow(0.5*Ndi,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volS/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                     DDmaterial[pointer].v=exp(volS/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -394,7 +394,7 @@ void DDmodel::DDInitialGuessPNJunction3D(){
     }
 }
 
-void DDmodel::DDInitialGuessMOSFET3D(){
+void ACDD::DDInitialGuessMOSFET3D(){
 
     //StructureFlag=2;
 
@@ -415,7 +415,7 @@ void DDmodel::DDInitialGuessMOSFET3D(){
                 //P+
                 DDmaterial[pointer].dop=-Nai;
                 DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                DDmaterial[pointer].u=exp((-1)*volB/VT);
+                DDmaterial[pointer].u=exp((-1.0)*volB/VT);
                 DDmaterial[pointer].v=exp(volB/VT);
                 DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                 DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -428,7 +428,7 @@ void DDmodel::DDInitialGuessMOSFET3D(){
                         //N+
                         DDmaterial[pointer].dop=NdPlusi;
                         DDmaterial[pointer].phi=(volS+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*volS/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                         DDmaterial[pointer].v=exp(volS/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -443,7 +443,7 @@ void DDmodel::DDInitialGuessMOSFET3D(){
                         //N+
                         DDmaterial[pointer].dop=NdPlusi;
                         DDmaterial[pointer].phi=(volD+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*volD/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                         DDmaterial[pointer].v=exp(volD/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -456,7 +456,7 @@ void DDmodel::DDInitialGuessMOSFET3D(){
     }
 }
 
-void DDmodel::DDInitialGuessISFET3D(){
+void ACDD::DDInitialGuessISFET3D(){
 
 #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -472,7 +472,7 @@ void DDmodel::DDInitialGuessISFET3D(){
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=-Nai;
                     DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                    DDmaterial[pointer].u=exp((-1)*volB/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volB/VT);
                     DDmaterial[pointer].v=exp(volB/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -489,7 +489,7 @@ void DDmodel::DDInitialGuessISFET3D(){
                         DDmaterial[pointer].k=Si_permi;
                         DDmaterial[pointer].dop=NdPlusi;
                         DDmaterial[pointer].phi=(volS+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*volS/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                         DDmaterial[pointer].v=exp(volS/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -502,7 +502,7 @@ void DDmodel::DDInitialGuessISFET3D(){
                         DDmaterial[pointer].k=Si_permi;
                         DDmaterial[pointer].dop=NdPlusi;
                         DDmaterial[pointer].phi=(volD+VT*log(0.5*NdPlusi+sqrt(pow(0.5*NdPlusi,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*volD/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                         DDmaterial[pointer].v=exp(volD/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, 0, 1); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, 0, 1);
@@ -517,7 +517,7 @@ void DDmodel::DDInitialGuessISFET3D(){
                     DDmaterial[pointer].k=SiO2_permi;
                     DDmaterial[pointer].phi=volG;
                     DDmaterial[pointer].dop=0;
-                    DDmaterial[pointer].u=exp((-1)*volG/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                     DDmaterial[pointer].v=exp(volG/VT);
                     DDmaterial[pointer].mun=0;
                     DDmaterial[pointer].mup=0;
@@ -531,7 +531,7 @@ void DDmodel::DDInitialGuessISFET3D(){
                     DDmaterial[pointer].k=Water_permi;
                     DDmaterial[pointer].phi=volG;
                     DDmaterial[pointer].dop=0;
-                    DDmaterial[pointer].u=exp((-1)*volG/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                     DDmaterial[pointer].v=exp(volG/VT);
                     DDmaterial[pointer].mun=0.12*1e18;
                     DDmaterial[pointer].mup=0.12*1e18;
@@ -567,7 +567,7 @@ void DDmodel::DDInitialGuessISFET3D(){
     }
 }
 
-void DDmodel::DDInitialGuess1NWR3D(){
+void ACDD::DDInitialGuess1NWR3D(){
 
 #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -582,7 +582,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=0;
                     DDmaterial[pointer].phi=volB;
-                    DDmaterial[pointer].u=exp((-1)*volB/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volB/VT);
                     DDmaterial[pointer].v=exp(volB/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, DDmaterial[pointer].Type); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, DDmaterial[pointer].Type);
@@ -604,7 +604,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
                     //Intrinsic
                     DDmaterial[pointer].phi=(Si_chi+(Si_Eg)/2)-(Si_chi+(Si_Eg)/2)+volG;
                     DDmaterial[pointer].dop=0;
-                    DDmaterial[pointer].u=exp((-1)*volG/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                     DDmaterial[pointer].v=exp(volG/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, DDmaterial[pointer].Type); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, DDmaterial[pointer].Type);
@@ -656,7 +656,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
                         DDmaterial[pointer].k=Si_permi;
                         DDmaterial[pointer].dop=-Nai;
                         DDmaterial[pointer].phi=((volD+volS)-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*(volD+volS)/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*(volD+volS)/VT);
                         DDmaterial[pointer].v=exp((volD+volS)/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, Na, DDmaterial[pointer].Type); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, Na, DDmaterial[pointer].Type);
@@ -669,7 +669,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volS-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volS/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                             DDmaterial[pointer].v=exp(volS/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -683,7 +683,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volD-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volD/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                             DDmaterial[pointer].v=exp(volD/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -699,7 +699,7 @@ void DDmodel::DDInitialGuess1NWR3D(){
 
 }
 
-void DDmodel::DDInitialGuess2NWR3D(){
+void ACDD::DDInitialGuess2NWR3D(){
 
 #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -714,7 +714,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=0;
                     DDmaterial[pointer].phi=volB;
-                    DDmaterial[pointer].u=exp((-1)*volB/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volB/VT);
                     DDmaterial[pointer].v=exp(volB/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, DDmaterial[pointer].Type); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, DDmaterial[pointer].Type);
@@ -736,7 +736,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                     //Intrinsic
                     DDmaterial[pointer].phi=(Si_chi+(Si_Eg)/2)-(Si_chi+(Si_Eg)/2)+volG;
                     DDmaterial[pointer].dop=0;
-                    DDmaterial[pointer].u=exp((-1)*volG/VT);
+                    DDmaterial[pointer].u=exp((-1.0)*volG/VT);
                     DDmaterial[pointer].v=exp(volG/VT);
                     DDmaterial[pointer].mun=munCal(Tamb, 0, DDmaterial[pointer].Type); // max Na Nd
                     DDmaterial[pointer].mup=mupCal(Tamb, 0, DDmaterial[pointer].Type);
@@ -786,7 +786,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                         DDmaterial[pointer].k=Si_permi;
                         DDmaterial[pointer].dop=-Nai;
                         DDmaterial[pointer].phi=((volD+volS)-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*(volD+volS)/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*(volD+volS)/VT);
                         DDmaterial[pointer].v=exp((volD+volS)/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, Na, DDmaterial[pointer].Type); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, Na, DDmaterial[pointer].Type);
@@ -799,7 +799,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volS-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volS/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                             DDmaterial[pointer].v=exp(volS/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -813,7 +813,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volD-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volD/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                             DDmaterial[pointer].v=exp(volD/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -832,7 +832,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                         DDmaterial[pointer].k=Si_permi;
                         DDmaterial[pointer].dop=-Nai;
                         DDmaterial[pointer].phi=((volD+volS)-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
-                        DDmaterial[pointer].u=exp((-1)*(volD+volS)/VT);
+                        DDmaterial[pointer].u=exp((-1.0)*(volD+volS)/VT);
                         DDmaterial[pointer].v=exp((volD+volS)/VT);
                         DDmaterial[pointer].mun=munCal(Tamb, Na, DDmaterial[pointer].Type); // max Na Nd
                         DDmaterial[pointer].mup=mupCal(Tamb, Na, DDmaterial[pointer].Type);
@@ -845,7 +845,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volS-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volS/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volS/VT);
                             DDmaterial[pointer].v=exp(volS/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -859,7 +859,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
                             DDmaterial[pointer].k=Si_permi;
                             DDmaterial[pointer].dop=-NaPlusi;
                             DDmaterial[pointer].phi=(volD-VT*log(0.5*NaPlusi+sqrt(pow(0.5*NaPlusi,2)+1)));
-                            DDmaterial[pointer].u=exp((-1)*volD/VT);
+                            DDmaterial[pointer].u=exp((-1.0)*volD/VT);
                             DDmaterial[pointer].v=exp(volD/VT);
                             DDmaterial[pointer].mun=munCal(Tamb, NaPlus, DDmaterial[pointer].Type); // max Na Nd
                             DDmaterial[pointer].mup=mupCal(Tamb, NaPlus, DDmaterial[pointer].Type);
@@ -875,7 +875,7 @@ void DDmodel::DDInitialGuess2NWR3D(){
 
 }
 
-double DDmodel::PoissonSolver2D(){
+double ACDD::PoissonSolver2D(){
 
     DD_loop=0;
 
@@ -900,7 +900,7 @@ double DDmodel::PoissonSolver2D(){
 
 }
 
-double DDmodel::PoissonGaussSeidel2D(){
+double ACDD::PoissonGaussSeidel2D(){
 
     double max_val=0;
 
@@ -910,7 +910,7 @@ double DDmodel::PoissonGaussSeidel2D(){
 
             int pointer = (px)*(j) + (i);
 
-            double phik=DDmaterial[pointer].phi;
+            complex <double> phik=DDmaterial[pointer].phi;
 
             DDmaterial[pointer].phi=PoissonGaussSeidelInner2D(i,j);
 
@@ -931,7 +931,7 @@ double DDmodel::PoissonGaussSeidel2D(){
 
 }
 
-double DDmodel::PoissonGaussSeidelInner2D(int i, int j){
+complex <double> ACDD::PoissonGaussSeidelInner2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
     int pointer_ip =   (px)*(j) + (i+1);
@@ -951,7 +951,7 @@ double DDmodel::PoissonGaussSeidelInner2D(int i, int j){
     double ystep_p=abs(mesh[pointer_jp].coordY-mesh[pointer].coordY);
     double ystep_n=abs(mesh[pointer_jn].coordY-mesh[pointer].coordY);
 
-    double f,df,phik;
+    complex <double> f,df,phik;
     double volume=deltax*deltay;
 
     phik=DDmaterial[pointer].phi;
@@ -961,20 +961,20 @@ double DDmodel::PoissonGaussSeidelInner2D(int i, int j){
     switch(Temp){
 
     case 1: //1=channel
-        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT)-DDmaterial[pointer].dop)*(-1)*q0/e0;
-       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT)-DDmaterial[pointer].dop)*((-1.0))*q0/e0;
+       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 2: //2=insulator
         f=volume*DDmaterial[pointer].rho/e0;
         df=0;
         break;
     case 3: //3=electrolyte
-        f=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0;
-       df=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0;
+       df=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 4: //4=Substrate
-        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT)-DDmaterial[pointer].dop)*(-1)*q0/e0;
-       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT)-DDmaterial[pointer].dop)*((-1.0))*q0/e0;
+       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 5: //5=Analyte
         f=volume*DDmaterial[pointer].rho/e0;
@@ -993,7 +993,7 @@ double DDmodel::PoissonGaussSeidelInner2D(int i, int j){
             +(permitivity_jp/ystep_p+permitivity_jn/ystep_n)*deltax - df));
 }
 
-double DDmodel::PoissonSolver3D(){
+double ACDD::PoissonSolver3D(){
 
     DD_loop=0;
 
@@ -1022,7 +1022,7 @@ double DDmodel::PoissonSolver3D(){
 
 }
 
-double DDmodel::PoissonGaussSeidel3D(){
+double ACDD::PoissonGaussSeidel3D(){
 
     double max_val=0;
 
@@ -1033,7 +1033,7 @@ double DDmodel::PoissonGaussSeidel3D(){
 
                 int pointer = (py)*(px)*(k) + (px)*(j) + (i);
 
-                double phik=DDmaterial[pointer].phi;
+                complex <double> phik=DDmaterial[pointer].phi;
 
                 DDmaterial[pointer].phi=PoissonGaussSeidelInner3D(i,j,k);
 
@@ -1055,7 +1055,7 @@ double DDmodel::PoissonGaussSeidel3D(){
 
 }
 
-double DDmodel::PoissonGaussSeidelInner3D(int i, int j, int k){
+complex <double> ACDD::PoissonGaussSeidelInner3D(int i, int j, int k){
 
     int pointer = (py)*(px)*(k) + (px)*(j) + (i);
     int pointer_ip = (py)*(px)*(k) + (px)*(j) + (i+1);
@@ -1082,7 +1082,7 @@ double DDmodel::PoissonGaussSeidelInner3D(int i, int j, int k){
     double zstep_p=abs(mesh[pointer_kp].coordZ-mesh[pointer].coordZ);
     double zstep_n=abs(mesh[pointer_kn].coordZ-mesh[pointer].coordZ);
 
-    double f(0),df(0),phik(0);
+    complex <double> f(0),df(0),phik(0);
     double volume=deltax*deltay*deltaz;
 
     phik=DDmaterial[pointer].phi;
@@ -1092,20 +1092,20 @@ double DDmodel::PoissonGaussSeidelInner3D(int i, int j, int k){
     switch(Temp){
 
     case 1: //1=channel
-        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT)-DDmaterial[pointer].dop)*(-1)*q0/e0;
-       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT)-DDmaterial[pointer].dop)*((-1.0))*q0/e0;
+       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 2: //2=insulator
         f=volume*DDmaterial[pointer].rho/e0;
         df=0;
         break;
     case 3: //3=electrolyte
-        f=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0;
-       df=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0;
+       df=volume*C0*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 4: //4=Substrate
-        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1)*phik/VT)-DDmaterial[pointer].dop)*(-1)*q0/e0;
-       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1)*phik/VT))*(-1)*q0/e0/VT;
+        f=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)-DDmaterial[pointer].v*exp((-1.0)*phik/VT)-DDmaterial[pointer].dop)*((-1.0))*q0/e0;
+       df=volume*ni_nm*(DDmaterial[pointer].u*exp(phik/VT)+DDmaterial[pointer].v*exp((-1.0)*phik/VT))*((-1.0))*q0/e0/VT;
         break;
     case 5: //5=Analyte
         f=volume*DDmaterial[pointer].rho/e0;
@@ -1125,7 +1125,7 @@ double DDmodel::PoissonGaussSeidelInner3D(int i, int j, int k){
             +(permitivity_kp/zstep_p+permitivity_kn/zstep_n)*deltax*deltay - df);
 }
 
-double DDmodel::ECSolver2D(){
+double ACDD::ECSolver2D(){
 
     DD_loop=0;
     double errEC(0),errEC_max(0);
@@ -1161,7 +1161,7 @@ double DDmodel::ECSolver2D(){
 
 }
 
-double DDmodel::ECTypeA2D(){
+double ACDD::ECTypeA2D(){
 
     double  max_val=0;
 
@@ -1171,7 +1171,7 @@ double DDmodel::ECTypeA2D(){
 
             int pointer = (px)*(j) + (i);
 
-            double uk = DDmaterial[pointer].u;
+            complex <double> uk = DDmaterial[pointer].u;
 
             DDmaterial[pointer].u=ECInner2D(i,j);
 
@@ -1192,7 +1192,7 @@ double DDmodel::ECTypeA2D(){
 
 }
 
-double DDmodel::ECTypeB2D(){
+double ACDD::ECTypeB2D(){
 
     double  max_val=0;
 
@@ -1202,7 +1202,7 @@ double DDmodel::ECTypeB2D(){
 
             int pointer = (px)*(j) + (i);
 
-            double uk = DDmaterial[pointer].u;
+            complex <double> uk = DDmaterial[pointer].u;
 
             DDmaterial[pointer].u=ECInner2D(i,j);
 
@@ -1241,7 +1241,7 @@ double DDmodel::ECTypeB2D(){
 
 }
 
-double DDmodel::ECInner2D(int i, int j){
+complex <double> ACDD::ECInner2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
     int pointer_ip =   (px)*(j) + (i+1);
@@ -1260,17 +1260,17 @@ double DDmodel::ECInner2D(int i, int j){
 
     volume=deltax*deltay;
 
-    double uf = DDmaterial[pointer].u;
+    complex <double> uf = DDmaterial[pointer].u;
 
-    double Bip = (DDmaterial[pointer].mun+DDmaterial[pointer_ip].mun)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_ip].phi/VT);
-    double Bin = (DDmaterial[pointer].mun+DDmaterial[pointer_in].mun)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_in].phi/VT);
-    double Bjp = (DDmaterial[pointer].mun+DDmaterial[pointer_jp].mun)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jp].phi/VT);
-    double Bjn = (DDmaterial[pointer].mun+DDmaterial[pointer_jn].mun)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jn].phi/VT);
+    complex <double> Bip = (DDmaterial[pointer].mun+DDmaterial[pointer_ip].mun)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_ip].phi/VT);
+    complex <double> Bin = (DDmaterial[pointer].mun+DDmaterial[pointer_in].mun)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_in].phi/VT);
+    complex <double> Bjp = (DDmaterial[pointer].mun+DDmaterial[pointer_jp].mun)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jp].phi/VT);
+    complex <double> Bjn = (DDmaterial[pointer].mun+DDmaterial[pointer_jn].mun)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jn].phi/VT);
 
-    double f=volume/VT*DDmaterial[pointer].r;
+    complex <double> f=volume/VT*DDmaterial[pointer].r;
 
-    double df=volume/VT*(pow(DDmaterial[pointer].v,2)*exp(-DDmaterial[pointer].phi/VT)+2*DDmaterial[pointer].v+exp(DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
-                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2,2);
+    complex <double> df=volume/VT*(pow(DDmaterial[pointer].v,2)*exp(-DDmaterial[pointer].phi/VT)+2.0*DDmaterial[pointer].v+exp(DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
+                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2.0,2);
 
     uf=((Bip*DDmaterial[pointer_ip].u/xstep_p+Bin*DDmaterial[pointer_in].u/xstep_n)*deltay
        +(Bjp*DDmaterial[pointer_jp].u/ystep_p+Bjn*DDmaterial[pointer_jn].u/ystep_n)*deltax
@@ -1279,7 +1279,7 @@ double DDmodel::ECInner2D(int i, int j){
     return uf;
 }
 
-double DDmodel::HCSolver2D(){
+double ACDD::HCSolver2D(){
 
     DD_loop=0;
     double errHC(0),errHC_max(0);
@@ -1313,7 +1313,7 @@ double DDmodel::HCSolver2D(){
     return errHC_max;
 }
 
-double DDmodel::HCTypeA2D(){
+double ACDD::HCTypeA2D(){
 
     double max_val=0;
 
@@ -1323,7 +1323,7 @@ double DDmodel::HCTypeA2D(){
 
             int pointer = (px)*(j) + (i);
 
-            double vk = DDmaterial[pointer].v;
+            complex <double> vk = DDmaterial[pointer].v;
 
             DDmaterial[pointer].v=HCInner2D(i,j);
 
@@ -1343,7 +1343,7 @@ double DDmodel::HCTypeA2D(){
     return max_val;
 }
 
-double DDmodel::HCTypeB2D(){
+double ACDD::HCTypeB2D(){
 
     double max_val=0;
 
@@ -1353,7 +1353,7 @@ double DDmodel::HCTypeB2D(){
 
             int pointer = (px)*(j) + (i);
 
-            double vk = DDmaterial[pointer].v;
+            complex <double> vk = DDmaterial[pointer].v;
 
             DDmaterial[pointer].v=HCInner2D(i,j);
 
@@ -1391,7 +1391,7 @@ double DDmodel::HCTypeB2D(){
     return max_val;
 }
 
-double DDmodel::HCInner2D(int i, int j){
+complex <double> ACDD::HCInner2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
     int pointer_ip =   (px)*(j) + (i+1);
@@ -1410,17 +1410,17 @@ double DDmodel::HCInner2D(int i, int j){
 
     volume=deltax*deltay;
 
-    double vf = DDmaterial[pointer].v;
+    complex <double> vf = DDmaterial[pointer].v;
 
-    double Bip = (DDmaterial[pointer].mup+DDmaterial[pointer_ip].mup)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bin = (DDmaterial[pointer].mup+DDmaterial[pointer_in].mup)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bjp = (DDmaterial[pointer].mup+DDmaterial[pointer_jp].mup)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bjn = (DDmaterial[pointer].mup+DDmaterial[pointer_jn].mup)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
+    complex <double> Bip = (DDmaterial[pointer].mup+DDmaterial[pointer_ip].mup)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bin = (DDmaterial[pointer].mup+DDmaterial[pointer_in].mup)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bjp = (DDmaterial[pointer].mup+DDmaterial[pointer_jp].mup)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bjn = (DDmaterial[pointer].mup+DDmaterial[pointer_jn].mup)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
 
-    double f=volume/VT*DDmaterial[pointer].r;
+    complex <double> f=volume/VT*DDmaterial[pointer].r;
 
-    double df=volume/VT*(pow(DDmaterial[pointer].u,2)*exp(DDmaterial[pointer].phi/VT)+2*DDmaterial[pointer].u+exp(-DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
-                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2,2);
+    complex <double> df=volume/VT*(pow(DDmaterial[pointer].u,2)*exp(DDmaterial[pointer].phi/VT)+2.0*DDmaterial[pointer].u+exp(-DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
+                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2.0,2);
 
     vf =((Bip*DDmaterial[pointer_ip].v/xstep_p+Bin*DDmaterial[pointer_in].v/xstep_n)*deltay
          +(Bjp*DDmaterial[pointer_jp].v/ystep_p+Bjn*DDmaterial[pointer_jn].v/ystep_n)*deltax
@@ -1429,7 +1429,7 @@ double DDmodel::HCInner2D(int i, int j){
     return vf;
 }
 
-void DDmodel::PoissonBC2D(){
+void ACDD::PoissonBC2D(){
 
     switch(StructureFlag){
 
@@ -1448,7 +1448,7 @@ void DDmodel::PoissonBC2D(){
     }
 }
 
-void DDmodel::PoissonBC2D_PN(){
+void ACDD::PoissonBC2D_PN(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1463,7 +1463,7 @@ void DDmodel::PoissonBC2D_PN(){
         }
 }
 
-void DDmodel::PoissonBC2D_MOSFET(){
+void ACDD::PoissonBC2D_MOSFET(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1493,7 +1493,7 @@ void DDmodel::PoissonBC2D_MOSFET(){
         }
 }
 
-void DDmodel::PoissonBC2D_ISFET(){
+void ACDD::PoissonBC2D_ISFET(){
 
     //substrate
     //if(mesh[pointer].coordY<=SubstrateThickness )
@@ -1529,7 +1529,7 @@ void DDmodel::PoissonBC2D_ISFET(){
         }
 }
 
-void DDmodel::ECBC2D(){
+void ACDD::ECBC2D(){
 
     switch(StructureFlag){
 
@@ -1548,7 +1548,7 @@ void DDmodel::ECBC2D(){
     }
 }
 
-void DDmodel::HCBC2D(){
+void ACDD::HCBC2D(){
 
     switch(StructureFlag){
 
@@ -1567,7 +1567,7 @@ void DDmodel::HCBC2D(){
     }
 }
 
-void DDmodel::ECBC2D_PN(){
+void ACDD::ECBC2D_PN(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1584,7 +1584,7 @@ void DDmodel::ECBC2D_PN(){
         }
 }
 
-void DDmodel::HCBC2D_PN(){
+void ACDD::HCBC2D_PN(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1601,7 +1601,7 @@ void DDmodel::HCBC2D_PN(){
         }
 }
 
-void DDmodel::ECBC2D_MOSFET(){
+void ACDD::ECBC2D_MOSFET(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1631,7 +1631,7 @@ void DDmodel::ECBC2D_MOSFET(){
         }
 }
 
-void DDmodel::HCBC2D_MOSFET(){
+void ACDD::HCBC2D_MOSFET(){
 
 #pragma omp parallel for
         for (int i=0; i<px; i++) {
@@ -1661,7 +1661,7 @@ void DDmodel::HCBC2D_MOSFET(){
         }
 }
 
-void DDmodel::ECBC2D_ISFET(){
+void ACDD::ECBC2D_ISFET(){
 
     //substrate
     //if(mesh[pointer].coordY<=SubstrateThickness )
@@ -1712,7 +1712,7 @@ void DDmodel::ECBC2D_ISFET(){
         }
 }
 
-void DDmodel::HCBC2D_ISFET(){
+void ACDD::HCBC2D_ISFET(){
 
     //substrate
     //if(mesh[pointer].coordY<=SubstrateThickness )
@@ -1763,7 +1763,7 @@ void DDmodel::HCBC2D_ISFET(){
         }
 }
 
-void DDmodel::ECBC3D(){
+void ACDD::ECBC3D(){
 
     switch(StructureFlag){
 
@@ -1788,7 +1788,7 @@ void DDmodel::ECBC3D(){
     }
 }
 
-void DDmodel::ECBC3D_PN(){
+void ACDD::ECBC3D_PN(){
 
     for(int i=0;i<px;i++){
         for(int j=0;j<py;j++){
@@ -1823,7 +1823,7 @@ void DDmodel::ECBC3D_PN(){
     }
 }
 
-void DDmodel::ECBC3D_MOSFET(){
+void ACDD::ECBC3D_MOSFET(){
 
     for(int i=0;i<px;i++){
         for(int j=0;j<py;j++){
@@ -1870,7 +1870,7 @@ void DDmodel::ECBC3D_MOSFET(){
     }
 }
 
-void DDmodel::ECBC3D_ISFET(){
+void ACDD::ECBC3D_ISFET(){
 
     for (int i=0; i<px; i++) {
         for (int j=0;j<py;j++){
@@ -1927,7 +1927,7 @@ void DDmodel::ECBC3D_ISFET(){
     }
 }
 
-void DDmodel::ECBC3D_1NWR(){
+void ACDD::ECBC3D_1NWR(){
 
     for(int i=0;i<px;i++){
         for(int j=NWRleft1;j<=NWRright1;j++){
@@ -1962,7 +1962,7 @@ void DDmodel::ECBC3D_1NWR(){
     }
 }
 
-void DDmodel::ECBC3D_2NWR(){
+void ACDD::ECBC3D_2NWR(){
 
     //NWR1
     for(int i=0;i<px;i++){
@@ -2031,7 +2031,7 @@ void DDmodel::ECBC3D_2NWR(){
     }
 }
 
-void DDmodel::HCBC3D(){
+void ACDD::HCBC3D(){
 
     switch(StructureFlag){
 
@@ -2056,7 +2056,7 @@ void DDmodel::HCBC3D(){
     }
 }
 
-void DDmodel::HCBC3D_PN(){
+void ACDD::HCBC3D_PN(){
 
     for(int i=0;i<px;i++){
         for(int j=0;j<py;j++){
@@ -2091,7 +2091,7 @@ void DDmodel::HCBC3D_PN(){
     }
 }
 
-void DDmodel::HCBC3D_MOSFET(){
+void ACDD::HCBC3D_MOSFET(){
 
     for(int i=0;i<px;i++){
         for(int j=0;j<py;j++){
@@ -2138,7 +2138,7 @@ void DDmodel::HCBC3D_MOSFET(){
     }
 }
 
-void DDmodel::HCBC3D_ISFET(){
+void ACDD::HCBC3D_ISFET(){
     for (int i=0; i<px; i++) {
         for (int j=0;j<py;j++){
 
@@ -2196,7 +2196,7 @@ void DDmodel::HCBC3D_ISFET(){
     }
 }
 
-void DDmodel::HCBC3D_1NWR(){
+void ACDD::HCBC3D_1NWR(){
 
     for(int i=0;i<px;i++){
         for(int j=NWRleft1;j<=NWRright1;j++){
@@ -2231,7 +2231,7 @@ void DDmodel::HCBC3D_1NWR(){
     }
 }
 
-void DDmodel::HCBC3D_2NWR(){
+void ACDD::HCBC3D_2NWR(){
 
     //NWR1
     for(int i=NWRleft1;i<=NWRright1;i++){
@@ -2300,7 +2300,7 @@ void DDmodel::HCBC3D_2NWR(){
     }
 }
 
-void DDmodel::PoissonBC3D(){
+void ACDD::PoissonBC3D(){
 
     switch(StructureFlag){
 
@@ -2326,7 +2326,7 @@ void DDmodel::PoissonBC3D(){
 
 }
 
-void DDmodel::PoissonBC3D_PN(){
+void ACDD::PoissonBC3D_PN(){
 
 #pragma omp parallel for
     for (int i=0;i<px;i++){
@@ -2357,7 +2357,7 @@ void DDmodel::PoissonBC3D_PN(){
     }
 }
 
-void DDmodel::PoissonBC3D_MOSFET(){
+void ACDD::PoissonBC3D_MOSFET(){
 
 
 #pragma omp parallel for
@@ -2404,7 +2404,7 @@ void DDmodel::PoissonBC3D_MOSFET(){
     }
 }
 
-void DDmodel::PoissonBC3D_ISFET(){
+void ACDD::PoissonBC3D_ISFET(){
 
     for (int i=0;i<px;i++){
         for (int k=0;k<pz;k++){
@@ -2441,7 +2441,7 @@ void DDmodel::PoissonBC3D_ISFET(){
     }
 }
 
-void DDmodel::PoissonBC3D_1NWR(){
+void ACDD::PoissonBC3D_1NWR(){
 
     for (int i=0;i<px;i++){
         for (int k=0;k<pz;k++){
@@ -2478,7 +2478,7 @@ void DDmodel::PoissonBC3D_1NWR(){
     }
 }
 
-void DDmodel::PoissonBC3D_2NWR(){
+void ACDD::PoissonBC3D_2NWR(){
 
     for (int i=0;i<px;i++){
         for (int k=0;k<pz;k++){
@@ -2515,7 +2515,7 @@ void DDmodel::PoissonBC3D_2NWR(){
     }
 }
 
-void DDmodel::BernoulliX(){
+void ACDD::BernoulliX(){
 
     double x(1.0),v1,v2;
 
@@ -2528,7 +2528,7 @@ void DDmodel::BernoulliX(){
     bernXl=x;
 }
 
-void DDmodel::PrintMaterial2D(string path){
+void ACDD::PrintMaterial2D(string path){
 
     fstream output;
 
@@ -2557,7 +2557,7 @@ void DDmodel::PrintMaterial2D(string path){
     output.close();
 }
 
-void DDmodel::PrintMaterial3D(string path){
+void ACDD::PrintMaterial3D(string path){
 
     fstream output;
 
@@ -2587,7 +2587,7 @@ void DDmodel::PrintMaterial3D(string path){
     output.close();
 }
 
-void DDmodel::ReadMaterial2D(string path){
+void ACDD::ReadMaterial2D(string path){
 
     DDInitialize();
 
@@ -2616,7 +2616,7 @@ void DDmodel::ReadMaterial2D(string path){
     input.close();
 }
 
-void DDmodel::ReadMaterial3D(string path){
+void ACDD::ReadMaterial3D(string path){
 
     DDInitialize();
 
@@ -2645,7 +2645,7 @@ void DDmodel::ReadMaterial3D(string path){
     input.close();
 }
 
-void DDmodel::RhoCalculation2D(){
+void ACDD::RhoCalculation2D(){
 
     #pragma omp parallel for
     for (int i=1;i<px-1;i++){
@@ -2669,7 +2669,7 @@ void DDmodel::RhoCalculation2D(){
             double permitivity_jp=DDmaterial[pointer].k*DDmaterial[pointer_jp].k / (0.5*DDmaterial[pointer_jp].k+0.5*DDmaterial[pointer].k);
             double permitivity_jn=DDmaterial[pointer].k*DDmaterial[pointer_jn].k / (0.5*DDmaterial[pointer_jn].k+0.5*DDmaterial[pointer].k);
 
-            double charge_totalemp = (-1)*((permitivity_ip*DDmaterial[pointer_ip].phi - permitivity_ip*DDmaterial[pointer].phi)/xstep_p*deltay
+            complex <double> charge_totalemp = (-1.0)*((permitivity_ip*DDmaterial[pointer_ip].phi - permitivity_ip*DDmaterial[pointer].phi)/xstep_p*deltay
                                           +(permitivity_in*DDmaterial[pointer_in].phi - permitivity_in*DDmaterial[pointer].phi)/xstep_n*deltay
                                           +(permitivity_jp*DDmaterial[pointer_jp].phi - permitivity_jp*DDmaterial[pointer].phi)/ystep_p*deltax
                                           +(permitivity_jn*DDmaterial[pointer_jn].phi - permitivity_jn*DDmaterial[pointer].phi)/ystep_n*deltax)
@@ -2680,7 +2680,7 @@ void DDmodel::RhoCalculation2D(){
     }
 }
 
-void DDmodel::RhoCalculation3D(){
+void ACDD::RhoCalculation3D(){
 
     #pragma omp parallel for
     for (int i=1;i<px-1;i++){
@@ -2712,7 +2712,7 @@ void DDmodel::RhoCalculation3D(){
                 double zstep_p=abs(mesh[pointer_kp].coordZ-mesh[pointer].coordZ);
                 double zstep_n=abs(mesh[pointer_kn].coordZ-mesh[pointer].coordZ);
 
-                double charge_totalemp = (-1)*((permitivity_ip*DDmaterial[pointer_ip].phi - permitivity_ip*DDmaterial[pointer].phi)/xstep_p*deltay*deltaz
+                complex <double> charge_totalemp = (-1.0)*((permitivity_ip*DDmaterial[pointer_ip].phi - permitivity_ip*DDmaterial[pointer].phi)/xstep_p*deltay*deltaz
                                               +(permitivity_in*DDmaterial[pointer_in].phi - permitivity_in*DDmaterial[pointer].phi)/xstep_n*deltay*deltaz
                                               +(permitivity_jp*DDmaterial[pointer_jp].phi - permitivity_jp*DDmaterial[pointer].phi)/ystep_p*deltax*deltaz
                                               +(permitivity_jn*DDmaterial[pointer_jn].phi - permitivity_jn*DDmaterial[pointer].phi)/ystep_n*deltax*deltaz
@@ -2727,7 +2727,7 @@ void DDmodel::RhoCalculation3D(){
     }
 }
 
-void DDmodel::EfieldCalculation2D(){
+void ACDD::EfieldCalculation2D(){
 
     #pragma omp parallel for
     for (int i=1;i<px-1;i++){
@@ -2739,8 +2739,8 @@ void DDmodel::EfieldCalculation2D(){
             int pointer_jp =   (px)*(j+1) + (i);
             int pointer_jn =   (px)*(j-1) + (i);
 
-            double Efx=(-1)*(DDmaterial[pointer_ip].phi-DDmaterial[pointer_in].phi)/((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)*1e-9);
-            double Efy=(-1)*(DDmaterial[pointer_jp].phi-DDmaterial[pointer_jn].phi)/((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)*1e-9);
+            complex <double> Efx=(-1.0)*(DDmaterial[pointer_ip].phi-DDmaterial[pointer_in].phi)/((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)*1e-9);
+            complex <double> Efy=(-1.0)*(DDmaterial[pointer_jp].phi-DDmaterial[pointer_jn].phi)/((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)*1e-9);
 
             DDmaterial[pointer].Ex=Efx;
             DDmaterial[pointer].Ey=Efy;
@@ -2775,7 +2775,7 @@ void DDmodel::EfieldCalculation2D(){
 
 }
 
-void DDmodel::EfieldCalculation3D(){
+void ACDD::EfieldCalculation3D(){
 
     #pragma omp parallel for
     for (int i=1;i<px-1;i++){
@@ -2790,9 +2790,9 @@ void DDmodel::EfieldCalculation3D(){
                 int pointer_kp = (py)*(px)*(k+1) + (px)*(j) + (i);
                 int pointer_kn = (py)*(px)*(k-1) + (px)*(j) + (i);
 
-                double Efx=(-1)*(DDmaterial[pointer_ip].phi-DDmaterial[pointer_in].phi)/((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)*1e-9);
-                double Efy=(-1)*(DDmaterial[pointer_jp].phi-DDmaterial[pointer_jn].phi)/((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)*1e-9);
-                double Efz=(-1)*(DDmaterial[pointer_kp].phi-DDmaterial[pointer_kn].phi)/((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)*1e-9);
+                complex <double> Efx=(-1.0)*(DDmaterial[pointer_ip].phi-DDmaterial[pointer_in].phi)/((mesh[pointer_ip].coordX-mesh[pointer_in].coordX)*1e-9);
+                complex <double> Efy=(-1.0)*(DDmaterial[pointer_jp].phi-DDmaterial[pointer_jn].phi)/((mesh[pointer_jp].coordY-mesh[pointer_jn].coordY)*1e-9);
+                complex <double> Efz=(-1.0)*(DDmaterial[pointer_kp].phi-DDmaterial[pointer_kn].phi)/((mesh[pointer_kp].coordZ-mesh[pointer_kn].coordZ)*1e-9);
 
                 DDmaterial[pointer].Ex=Efx;
                 DDmaterial[pointer].Ey=Efy;
@@ -2853,7 +2853,7 @@ void DDmodel::EfieldCalculation3D(){
     }
 }
 
-void DDmodel::DDInitialize(){
+void ACDD::DDInitialize(){
 
     #pragma omp parallel for
     for(int i=0;i<L;i++){
@@ -2876,7 +2876,7 @@ void DDmodel::DDInitialize(){
 }
 
 
-double DDmodel::munCal(double T, double dopping, int f){
+double ACDD::munCal(double T, double dopping, int f){
 
     // 1200 cm^2/v.s  0.12 m^2/v.s  0.12*1e18 nm^2/v.s
 
@@ -2900,7 +2900,7 @@ double DDmodel::munCal(double T, double dopping, int f){
     //return (88*pow(T/300,-0.57)+1252*pow(T/300,-2.33)/(1+N/(1.432e23*pow(T/300,2.546))))*1e-4;
 }
 
-double DDmodel::mupCal(double T,double dopping, int f){
+double ACDD::mupCal(double T,double dopping, int f){
 
     // 1200 cm^2/v.s  0.12 m^2/v.s  0.12*1e18 nm^2/v.s
 
@@ -2923,45 +2923,45 @@ double DDmodel::mupCal(double T,double dopping, int f){
     //return (54.3*pow(T/300,-0.57)+407*pow(T/300,-2.33)/(1+N/(2.67e23*pow(T/300,2.546))))*1e-4
 }
 
-double DDmodel::tauNCal(double dopping){
+double ACDD::tauNCal(double dopping){
 
     //Nd dopping
     //calculate hole lifetime
     return 3.94e-4/(1+dopping/1e21);
 }
 
-double DDmodel::tauPCal(double dopping){
+double ACDD::tauPCal(double dopping){
 
     //Na dopping
     //calculate electron lifetime
     return 3.94e-4/(1+dopping/1e21);
 }
 
-double DDmodel::SRHrecomb2D(int i, int j){
+complex <double> ACDD::SRHrecomb2D(int i, int j){
 
     int pointer = (px)*(j) + (i);
     //http://www.iue.tuwien.ac.at/phd/entner/node11.html
-    return (DDmaterial[pointer].u*DDmaterial[pointer].v-1)/DDmaterial[pointer].tau/(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp((-1)*DDmaterial[pointer].phi/VT)+2);
+    return (DDmaterial[pointer].u*DDmaterial[pointer].v-1.0)/DDmaterial[pointer].tau/(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp((-1.0)*DDmaterial[pointer].phi/VT)+2.0);
 }
 
-double DDmodel::SRHrecomb3D(int i, int j, int k){
+complex <double> ACDD::SRHrecomb3D(int i, int j, int k){
 
     int pointer = (px)*(py)*(k) + (px)*(j) + (i);
     //http://www.iue.tuwien.ac.at/phd/entner/node11.html
-    return (DDmaterial[pointer].u*DDmaterial[pointer].v-1)/DDmaterial[pointer].tau/(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp((-1)*DDmaterial[pointer].phi/VT)+2);
+    return (DDmaterial[pointer].u*DDmaterial[pointer].v-1.0)/DDmaterial[pointer].tau/(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp((-1.0)*DDmaterial[pointer].phi/VT)+2.0);
 }
 
-double DDmodel::Bern(double dphi, double phi)
+complex<double> ACDD::Bern(complex<double> dphi, complex<double> phi)
 {
     if(abs(dphi)<bernXl){
-        return exp(phi)*(1.0-dphi/2);
+        return exp(phi)*(1.0-dphi/2.0);
     }
     else{
         return exp(phi)*dphi/(exp(dphi)-1.0);
     }
 }
 
-void DDmodel::IdVG2D(){
+void ACDD::IdVG2D(){
 
     int numIter(0);
     double errMax(0),errPhi(0),errElec(0),errHole(0);
@@ -2983,7 +2983,7 @@ void DDmodel::IdVG2D(){
     output2.precision(10);
 
     do{
-        volG=(volGi+index*volGs);
+        volG=(volGi+(double)index*volGs);
         DDInitialGuess2D();
 
         output2 <<"Vg="<<volG<<"\t"<<"Vd="<<volD<<endl;
@@ -3038,14 +3038,14 @@ void DDmodel::IdVG2D(){
         index++;
         numIter=0;
 
-    }while(volGi+index*volGs<(volGe+0.001));
+    }while(abs(volGi+(double)index*volGs)<abs(volGe+0.001)); // this is wrong
 
     output2.close();
     cout << "Simulation Process Finished."<<endl;
 
 }
 
-void DDmodel::IdVD2D(){
+void ACDD::IdVD2D(){
 
     int numIter(0);
     double errMax(0),errPhi(0),errElec(0),errHole(0);
@@ -3065,7 +3065,7 @@ void DDmodel::IdVD2D(){
     output2.precision(10);
 
     do{
-        volD=(volDi+index*volDs);
+        volD=(volDi+(double)index*volDs);
         DDInitialGuess2D();
 
         output2 <<"Vg="<<volG<<"\t"<<"Vd="<<volD<<endl;
@@ -3121,13 +3121,13 @@ void DDmodel::IdVD2D(){
         index++;
         numIter=0;
 
-    }while(volDi+index*volDs<volDe+0.001);
+    }while(abs(volDi+(double)index*volDs)<abs(volDe+0.001)); //this is wrong
 
     output2.close();
     cout << "Simulation Process Finished."<<endl;
 }
 
-void DDmodel::IdVG3D(){
+void ACDD::IdVG3D(){
 
     int numIter(0);
     double errMax(0),errPhi(0),errElec(0),errHole(0);
@@ -3149,7 +3149,7 @@ void DDmodel::IdVG3D(){
     output2.precision(10);
 
     do{
-        volG=(volGi+index*volGs);
+        volG=(volGi+(double)index*volGs);
         DDInitialGuess3D();
 
         output2 <<"Vg="<<volG<<"\t"<<"Vd="<<volD<<endl;
@@ -3204,14 +3204,14 @@ void DDmodel::IdVG3D(){
         index++;
         numIter=0;
 
-    }while(volGi+index*volGs<(volGe+0.001));
+    }while(abs(volGi+(double)index*volGs)<abs(volGe+0.001)); // this is wrong
 
     output2.close();
     cout << "Simulation Process Finished."<<endl;
 
 }
 
-void DDmodel::IdVD3D(){
+void ACDD::IdVD3D(){
 
     int numIter(0);
     double errMax(0),errPhi(0),errElec(0),errHole(0);
@@ -3231,7 +3231,7 @@ void DDmodel::IdVD3D(){
     output2.precision(10);
 
     do{
-        volD=(volDi+index*volDs);
+        volD=(volDi+(double)index*volDs);
         DDInitialGuess3D();
 
         output2 <<"Vg="<<volG<<"\t"<<"Vd="<<volD<<endl;
@@ -3287,14 +3287,14 @@ void DDmodel::IdVD3D(){
         index++;
         numIter=0;
 
-    }while(volDi+index*volDs<volDe+0.001);
+    }while(abs(volDi+(double)index*volDs)<abs(volDe+0.001));
 
     output2.close();
     cout << "Simulation Process Finished."<<endl;
 }
 
 
-void DDmodel::Jcal2D(){
+void ACDD::Jcal2D(){
 
     switch(StructureFlag){
 
@@ -3313,9 +3313,9 @@ void DDmodel::Jcal2D(){
     }
 }
 
-void DDmodel::Jcal2D_PN(void){
+void ACDD::Jcal2D_PN(void){
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0);
 
     JcalS2D_PN(Current_Sn,Current_Sp);
     JcalD2D_PN(Current_Dn,Current_Dp);
@@ -3326,7 +3326,7 @@ void DDmodel::Jcal2D_PN(void){
     output1.close();
 }
 
-void DDmodel::JcalS2D_PN(double &JSn,double &JSp){
+void ACDD::JcalS2D_PN(complex <double> &JSn,complex <double> &JSp){
 
     for (int j=0; j<py; j++) {
         int pointer = (px)*(j) + (0);
@@ -3354,11 +3354,11 @@ void DDmodel::JcalS2D_PN(double &JSn,double &JSp){
              (DDmaterial[pointer_ip].v-DDmaterial[pointer].v)*deltay/xstep;
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD2D_PN(double &JDn, double &JDp){
+void ACDD::JcalD2D_PN(complex <double> &JDn,complex <double> &JDp){
 
     for (int j=0; j<py; j++) {
         int pointer = (px)*(j) + (px-2);
@@ -3386,13 +3386,13 @@ void DDmodel::JcalD2D_PN(double &JDn, double &JDp){
              (DDmaterial[pointer_ip].v-DDmaterial[pointer].v)*deltay/xstep;
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::Jcal2D_MOSFET(void){
+void ACDD::Jcal2D_MOSFET(void){
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
 
     JcalS2D_MOSFET(Current_Sn,Current_Sp);
     JcalD2D_MOSFET(Current_Dn,Current_Dp);
@@ -3407,7 +3407,7 @@ void DDmodel::Jcal2D_MOSFET(void){
     output1.close();
 }
 
-void DDmodel::JcalS2D_MOSFET(double &JSn, double &JSp){
+void ACDD::JcalS2D_MOSFET(complex <double> &JSn, complex <double> &JSp){
 
     for (int i=0; i<px; i++) {
         int pointer = (px)*(0) + (i);
@@ -3436,11 +3436,11 @@ void DDmodel::JcalS2D_MOSFET(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD2D_MOSFET(double &JDn, double &JDp){
+void ACDD::JcalD2D_MOSFET(complex <double> &JDn, complex <double> &JDp){
 
     for (int i=0; i<px; i++) {
         int pointer = (px)*(0) + (i);
@@ -3469,11 +3469,11 @@ void DDmodel::JcalD2D_MOSFET(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalB2D_MOSFET(double &JBn, double &JBp){
+void ACDD::JcalB2D_MOSFET(complex <double> &JBn, complex <double> &JBp){
 
     for (int i=0; i<px; i++) {
         int pointer = (px)*(py-2) + (i);
@@ -3501,13 +3501,13 @@ void DDmodel::JcalB2D_MOSFET(double &JBn, double &JBp){
              (DDmaterial[pointer_jp].v-DDmaterial[pointer].v)*deltax/ystep;
     }
 
-    JBn=JBn*q0*ni_nm*VT*(-1);
+    JBn=JBn*q0*ni_nm*VT*((-1.0));
     JBp=JBp*q0*ni_nm*VT;
 }
 
-void DDmodel::Jcal2D_ISFET(void){
+void ACDD::Jcal2D_ISFET(void){
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
 
     JcalS2D_ISFET(Current_Sn,Current_Sp);
     JcalD2D_ISFET(Current_Dn,Current_Dp);
@@ -3521,7 +3521,7 @@ void DDmodel::Jcal2D_ISFET(void){
     output1.close();
 }
 
-void DDmodel::JcalS2D_ISFET(double &JSn, double &JSp){
+void ACDD::JcalS2D_ISFET(complex <double> &JSn, complex <double> &JSp){
 
     for (int j=0; j<py; j++) {
         int pointer = (px)*(j) + (0);
@@ -3559,11 +3559,11 @@ void DDmodel::JcalS2D_ISFET(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD2D_ISFET(double &JDn, double &JDp){
+void ACDD::JcalD2D_ISFET(complex <double> &JDn, complex <double> &JDp){
 
     for (int j=0; j<py; j++) {
         int pointer = (px)*(j) + (px-2);
@@ -3598,11 +3598,11 @@ void DDmodel::JcalD2D_ISFET(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalB2D_ISFET(double &JBn, double &JBp){
+void ACDD::JcalB2D_ISFET(complex <double> &JBn, complex <double> &JBp){
 
     for (int i=0; i<px; i++) {
         int pointer = (px)*(1) + (i);
@@ -3636,12 +3636,12 @@ void DDmodel::JcalB2D_ISFET(double &JBn, double &JBp){
              (DDmaterial[pointer_jn].v-DDmaterial[pointer].v)*deltax/ystep;
     }
 
-    JBn=JBn*q0*ni_nm*VT*(-1);
+    JBn=JBn*q0*ni_nm*VT*((-1.0));
     JBp=JBp*q0*ni_nm*VT;
 
 }
 
-void DDmodel::Jcal3D(){
+void ACDD::Jcal3D(){
 
     switch(StructureFlag){
 
@@ -3666,7 +3666,7 @@ void DDmodel::Jcal3D(){
     }
 }
 
-double DDmodel::ECSolver3D(){
+double ACDD::ECSolver3D(){
 
     DD_loop=0;
     double errEC(0),errEC_max(0);
@@ -3707,7 +3707,7 @@ double DDmodel::ECSolver3D(){
 
 }
 
-double DDmodel::ECTypeA3D(){
+double ACDD::ECTypeA3D(){
 
     double  max_val=0;
 
@@ -3718,7 +3718,7 @@ double DDmodel::ECTypeA3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double uk = DDmaterial[pointer].u;
+                complex <double> uk = DDmaterial[pointer].u;
 
                 DDmaterial[pointer].u=ECInner3D(i,j,k);
 
@@ -3739,7 +3739,7 @@ double DDmodel::ECTypeA3D(){
     return max_val;
 }
 
-double DDmodel::HCTypeA3D(){
+double ACDD::HCTypeA3D(){
 
     double  max_val=0;
 
@@ -3750,7 +3750,7 @@ double DDmodel::HCTypeA3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double vk = DDmaterial[pointer].v;
+                complex <double> vk = DDmaterial[pointer].v;
 
                 DDmaterial[pointer].v=HCInner3D(i,j,k);
 
@@ -3771,7 +3771,7 @@ double DDmodel::HCTypeA3D(){
     return max_val;
 }
 
-double DDmodel::ECTypeB3D(){
+double ACDD::ECTypeB3D(){
 
     double  max_val=0;
 
@@ -3782,7 +3782,7 @@ double DDmodel::ECTypeB3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double uk = DDmaterial[pointer].u;
+                complex <double> uk = DDmaterial[pointer].u;
 
                 DDmaterial[pointer].u=ECInner3D(i,j,k);
 
@@ -3803,7 +3803,7 @@ double DDmodel::ECTypeB3D(){
     return max_val;
 }
 
-double DDmodel::HCTypeB3D(){
+double ACDD::HCTypeB3D(){
 
     double  max_val=0;
 
@@ -3814,7 +3814,7 @@ double DDmodel::HCTypeB3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double vk = DDmaterial[pointer].v;
+                complex <double> vk = DDmaterial[pointer].v;
 
                 DDmaterial[pointer].v=HCInner3D(i,j,k);
 
@@ -3835,7 +3835,7 @@ double DDmodel::HCTypeB3D(){
     return max_val;
 }
 
-double DDmodel::EC1NWR3D(){
+double ACDD::EC1NWR3D(){
 
     double  max_val=0;
 
@@ -3846,7 +3846,7 @@ double DDmodel::EC1NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double uk = DDmaterial[pointer].u;
+                complex <double> uk = DDmaterial[pointer].u;
 
                 DDmaterial[pointer].u=ECInner3D(i,j,k);
 
@@ -3868,7 +3868,7 @@ double DDmodel::EC1NWR3D(){
 
 }
 
-double DDmodel::EC2NWR3D(){
+double ACDD::EC2NWR3D(){
 
     double  max_val=0;
 
@@ -3879,7 +3879,7 @@ double DDmodel::EC2NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double uk = DDmaterial[pointer].u;
+                complex <double> uk = DDmaterial[pointer].u;
 
                 DDmaterial[pointer].u=ECInner3D(i,j,k);
 
@@ -3902,7 +3902,7 @@ double DDmodel::EC2NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double uk = DDmaterial[pointer].u;
+                complex <double> uk = DDmaterial[pointer].u;
 
                 DDmaterial[pointer].u=ECInner3D(i,j,k);
 
@@ -3924,7 +3924,7 @@ double DDmodel::EC2NWR3D(){
 
 }
 
-double DDmodel::ECInner3D(int i, int j, int k){
+complex <double> ACDD::ECInner3D(int i, int j, int k){
 
     int pointer = (px)*(py)*(k) + (px)*(j) + (i);
     int pointer_ip = (px)*(py)*(k) + (px)*(j) + (i+1);
@@ -3949,19 +3949,19 @@ double DDmodel::ECInner3D(int i, int j, int k){
 
     volume=deltax*deltay*deltaz;
 
-    double uf =DDmaterial[pointer].u;
+    complex <double> uf =DDmaterial[pointer].u;
 
-    double Bip = (DDmaterial[pointer].mun+DDmaterial[pointer_ip].mun)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_ip].phi/VT);
-    double Bin = (DDmaterial[pointer].mun+DDmaterial[pointer_in].mun)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_in].phi/VT);
-    double Bjp = (DDmaterial[pointer].mun+DDmaterial[pointer_jp].mun)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jp].phi/VT);
-    double Bjn = (DDmaterial[pointer].mun+DDmaterial[pointer_jn].mun)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jn].phi/VT);
-    double Bkp = (DDmaterial[pointer].mun+DDmaterial[pointer_kp].mun)/2.0*Bern(DDmaterial[pointer_kp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_kp].phi/VT);
-    double Bkn = (DDmaterial[pointer].mun+DDmaterial[pointer_kn].mun)/2.0*Bern(DDmaterial[pointer_kn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_kn].phi/VT);
+    complex <double> Bip = (DDmaterial[pointer].mun+DDmaterial[pointer_ip].mun)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_ip].phi/VT);
+    complex <double> Bin = (DDmaterial[pointer].mun+DDmaterial[pointer_in].mun)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_in].phi/VT);
+    complex <double> Bjp = (DDmaterial[pointer].mun+DDmaterial[pointer_jp].mun)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jp].phi/VT);
+    complex <double> Bjn = (DDmaterial[pointer].mun+DDmaterial[pointer_jn].mun)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_jn].phi/VT);
+    complex <double> Bkp = (DDmaterial[pointer].mun+DDmaterial[pointer_kp].mun)/2.0*Bern(DDmaterial[pointer_kp].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_kp].phi/VT);
+    complex <double> Bkn = (DDmaterial[pointer].mun+DDmaterial[pointer_kn].mun)/2.0*Bern(DDmaterial[pointer_kn].phi/VT-DDmaterial[pointer].phi/VT, DDmaterial[pointer_kn].phi/VT);
 
-    double f=volume/VT*DDmaterial[pointer].r;
+    complex <double> f=volume/VT*DDmaterial[pointer].r;
 
-    double df=volume/VT*(pow(DDmaterial[pointer].v,2)*exp(-DDmaterial[pointer].phi/VT)+2*DDmaterial[pointer].v+exp(DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
-                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2,2);
+    complex <double> df=volume/VT*(pow(DDmaterial[pointer].v,2)*exp(-DDmaterial[pointer].phi/VT)+2.0*DDmaterial[pointer].v+exp(DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
+                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2.0,2);
 
     uf=((Bip*DDmaterial[pointer_ip].u/xstep_p+Bin*DDmaterial[pointer_in].u/xstep_n)*deltay*deltaz
        +(Bjp*DDmaterial[pointer_jp].u/ystep_p+Bjn*DDmaterial[pointer_jn].u/ystep_n)*deltax*deltaz
@@ -3971,7 +3971,7 @@ double DDmodel::ECInner3D(int i, int j, int k){
     return uf;
 }
 
-double DDmodel::HCSolver3D(){
+double ACDD::HCSolver3D(){
 
     DD_loop=0;
     double errHC(0),errHC_max(0);
@@ -4011,7 +4011,7 @@ double DDmodel::HCSolver3D(){
     return errHC_max;
 }
 
-double DDmodel::HC1NWR3D(){
+double ACDD::HC1NWR3D(){
 
     double  max_val=0;
 
@@ -4022,7 +4022,7 @@ double DDmodel::HC1NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double vk = DDmaterial[pointer].v;
+                complex <double> vk = DDmaterial[pointer].v;
 
                 DDmaterial[pointer].v=HCInner3D(i,j,k);
 
@@ -4044,7 +4044,7 @@ double DDmodel::HC1NWR3D(){
 
 }
 
-double DDmodel::HC2NWR3D(){
+double ACDD::HC2NWR3D(){
 
     double  max_val=0;
 
@@ -4055,7 +4055,7 @@ double DDmodel::HC2NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double vk = DDmaterial[pointer].v;
+                complex <double> vk = DDmaterial[pointer].v;
 
                 DDmaterial[pointer].v=HCInner3D(i,j,k);
 
@@ -4078,7 +4078,7 @@ double DDmodel::HC2NWR3D(){
 
                 int pointer = (px)*(py)*(k) + (px)*(j) + (i);
 
-                double vk = DDmaterial[pointer].v;
+                complex <double> vk = DDmaterial[pointer].v;
 
                 DDmaterial[pointer].v=HCInner3D(i,j,k);
 
@@ -4100,7 +4100,7 @@ double DDmodel::HC2NWR3D(){
 
 }
 
-double DDmodel::HCInner3D(int i, int j, int k){
+complex <double> ACDD::HCInner3D(int i, int j, int k){
 
     int pointer = (px)*(py)*(k) + (px)*(j) + (i);
     int pointer_ip = (px)*(py)*(k) + (px)*(j) + (i+1);
@@ -4125,19 +4125,19 @@ double DDmodel::HCInner3D(int i, int j, int k){
 
     volume=deltax*deltay*deltaz;
 
-    double vf =DDmaterial[pointer].v;
+    complex <double> vf =DDmaterial[pointer].v;
 
-    double Bip = (DDmaterial[pointer].mup+DDmaterial[pointer_ip].mup)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bin = (DDmaterial[pointer].mup+DDmaterial[pointer_in].mup)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bjp = (DDmaterial[pointer].mup+DDmaterial[pointer_jp].mup)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bjn = (DDmaterial[pointer].mup+DDmaterial[pointer_jn].mup)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bkp = (DDmaterial[pointer].mup+DDmaterial[pointer_kp].mup)/2.0*Bern(DDmaterial[pointer_kp].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
-    double Bkn = (DDmaterial[pointer].mup+DDmaterial[pointer_kn].mup)/2.0*Bern(DDmaterial[pointer_kn].phi/VT-DDmaterial[pointer].phi/VT, (-1)*DDmaterial[pointer].phi/VT);
+    complex <double> Bip = (DDmaterial[pointer].mup+DDmaterial[pointer_ip].mup)/2.0*Bern(DDmaterial[pointer_ip].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bin = (DDmaterial[pointer].mup+DDmaterial[pointer_in].mup)/2.0*Bern(DDmaterial[pointer_in].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bjp = (DDmaterial[pointer].mup+DDmaterial[pointer_jp].mup)/2.0*Bern(DDmaterial[pointer_jp].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bjn = (DDmaterial[pointer].mup+DDmaterial[pointer_jn].mup)/2.0*Bern(DDmaterial[pointer_jn].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bkp = (DDmaterial[pointer].mup+DDmaterial[pointer_kp].mup)/2.0*Bern(DDmaterial[pointer_kp].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
+    complex <double> Bkn = (DDmaterial[pointer].mup+DDmaterial[pointer_kn].mup)/2.0*Bern(DDmaterial[pointer_kn].phi/VT-DDmaterial[pointer].phi/VT, (-1.0)*DDmaterial[pointer].phi/VT);
 
-    double f=volume/VT*DDmaterial[pointer].r;
+    complex <double> f=volume/VT*DDmaterial[pointer].r;
 
-    double df=volume/VT*(pow(DDmaterial[pointer].u,2)*exp(DDmaterial[pointer].phi/VT)+2*DDmaterial[pointer].u+exp(-DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
-                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2,2);
+    complex <double> df=volume/VT*(pow(DDmaterial[pointer].u,2)*exp(DDmaterial[pointer].phi/VT)+2.0*DDmaterial[pointer].u+exp(-DDmaterial[pointer].phi/VT))/DDmaterial[pointer].tau/
+                pow(DDmaterial[pointer].u*exp(DDmaterial[pointer].phi/VT)+DDmaterial[pointer].v*exp(-DDmaterial[pointer].phi/VT)+2.0,2);
 
     vf=((Bip*DDmaterial[pointer_ip].v/xstep_p+Bin*DDmaterial[pointer_in].v/xstep_n)*deltay*deltaz
        +(Bjp*DDmaterial[pointer_jp].v/ystep_p+Bjn*DDmaterial[pointer_jn].v/ystep_n)*deltax*deltaz
@@ -4148,9 +4148,9 @@ double DDmodel::HCInner3D(int i, int j, int k){
 }
 
 
-void DDmodel::Jcal3D_PN(){
+void ACDD::Jcal3D_PN(){
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0);
 
     JcalS3D_PN(Current_Sn,Current_Sp);
     JcalD3D_PN(Current_Dn,Current_Dp);
@@ -4161,7 +4161,7 @@ void DDmodel::Jcal3D_PN(){
     output1.close();
 }
 
-void DDmodel::JcalS3D_PN(double &JSn,double &JSp){
+void ACDD::JcalS3D_PN(complex <double> &JSn,complex <double> &JSp){
 
     for (int j=0; j<py; j++) {
         for (int k=1; k<pz-1; k++) {
@@ -4202,11 +4202,11 @@ void DDmodel::JcalS3D_PN(double &JSn,double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD3D_PN(double &JDn, double &JDp){
+void ACDD::JcalD3D_PN(complex <double> &JDn, complex <double> &JDp){
 
     for (int j=0; j<py; j++) {
         for (int k=0; k<pz; k++) {
@@ -4247,15 +4247,15 @@ void DDmodel::JcalD3D_PN(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
 
-void DDmodel::Jcal3D_MOSFET(){
+void ACDD::Jcal3D_MOSFET(){
 
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
 
     JcalS3D_MOSFET(Current_Sn,Current_Sp);
     JcalD3D_MOSFET(Current_Dn,Current_Dp);
@@ -4270,7 +4270,7 @@ void DDmodel::Jcal3D_MOSFET(){
     output1.close();
 }
 
-void DDmodel::JcalS3D_MOSFET(double &JSn, double &JSp){
+void ACDD::JcalS3D_MOSFET(complex <double> &JSn, complex <double> &JSp){
 
     for (int i=0; i<px; i++) {
         for (int j=0; j<py; j++) {
@@ -4316,11 +4316,11 @@ void DDmodel::JcalS3D_MOSFET(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD3D_MOSFET(double &JDn, double &JDp){
+void ACDD::JcalD3D_MOSFET(complex <double> &JDn, complex <double> &JDp){
 
     for (int i=0; i<px; i++) {
         for (int j=0; j<py; j++) {
@@ -4365,11 +4365,11 @@ void DDmodel::JcalD3D_MOSFET(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalB3D_MOSFET(double &JBn, double &JBp){
+void ACDD::JcalB3D_MOSFET(complex <double> &JBn, complex <double> &JBp){
 
     for (int i=0; i<px; i++) {
         for (int j=0; j<py; j++) {
@@ -4411,14 +4411,14 @@ void DDmodel::JcalB3D_MOSFET(double &JBn, double &JBp){
         }
     }
 
-    JBn=JBn*q0*ni_nm*VT*(-1);
+    JBn=JBn*q0*ni_nm*VT*((-1.0));
     JBp=JBp*q0*ni_nm*VT;
 }
 
-void DDmodel::Jcal3D_ISFET(){
+void ACDD::Jcal3D_ISFET(){
 
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
 
     JcalS3D_ISFET(Current_Sn,Current_Sp);
     JcalD3D_ISFET(Current_Dn,Current_Dp);
@@ -4433,7 +4433,7 @@ void DDmodel::Jcal3D_ISFET(){
     output1.close();
 }
 
-void DDmodel::JcalS3D_ISFET(double &JSn, double &JSp){
+void ACDD::JcalS3D_ISFET(complex <double> &JSn, complex <double> &JSp){
 
     for (int j=0; j<py; j++) {
         for (int k=0; k<pz; k++) {
@@ -4470,11 +4470,11 @@ void DDmodel::JcalS3D_ISFET(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD3D_ISFET(double &JDn, double &JDp){
+void ACDD::JcalD3D_ISFET(complex <double> &JDn, complex <double> &JDp){
 
     for (int j=0; j<py; j++) {
         for (int k=0; k<pz; k++) {
@@ -4511,11 +4511,11 @@ void DDmodel::JcalD3D_ISFET(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalB3D_ISFET(double &JBn, double &JBp){
+void ACDD::JcalB3D_ISFET(complex <double> &JBn, complex <double> &JBp){
 
     for (int i=0; i<px; i++) {
         for (int j=0; j<py; j++) {
@@ -4557,14 +4557,14 @@ void DDmodel::JcalB3D_ISFET(double &JBn, double &JBp){
         }
     }
 
-    JBn=JBn*q0*ni_nm*VT*(-1);
+    JBn=JBn*q0*ni_nm*VT*((-1.0));
     JBp=JBp*q0*ni_nm*VT;
 }
 
 
-void DDmodel::Jcal3D_1NWR(){
+void ACDD::Jcal3D_1NWR(){
     ofstream  output1;
-    double Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
+    complex <double> Current_Sn(0),Current_Sp(0),Current_Dn(0),Current_Dp(0),Current_Bn(0),Current_Bp(0);
 
     JcalS3D_NWR1(Current_Sn,Current_Sp);
     JcalD3D_NWR1(Current_Dn,Current_Dp);
@@ -4577,10 +4577,10 @@ void DDmodel::Jcal3D_1NWR(){
     output1.close();
 }
 
-void DDmodel::Jcal3D_2NWR(){
+void ACDD::Jcal3D_2NWR(){
     ofstream  output1;
-    double Current_Sn1(0),Current_Sp1(0),Current_Dn1(0),Current_Dp1(0);
-    double Current_Sn2(0),Current_Sp2(0),Current_Dn2(0),Current_Dp2(0);
+    complex <double> Current_Sn1(0),Current_Sp1(0),Current_Dn1(0),Current_Dp1(0);
+    complex <double> Current_Sn2(0),Current_Sp2(0),Current_Dn2(0),Current_Dp2(0);
 
     JcalS3D_NWR1(Current_Sn1,Current_Sp1);
     JcalD3D_NWR1(Current_Dn1,Current_Dp1);
@@ -4597,7 +4597,7 @@ void DDmodel::Jcal3D_2NWR(){
     output1.close();
 }
 
-void DDmodel::JcalS3D_NWR1(double &JSn, double &JSp){
+void ACDD::JcalS3D_NWR1(complex <double> &JSn, complex <double> &JSp){
 
     for (int j=NWRleft1; j<NWRright1; j++) {
         for (int k=NWRbottom1; k<NWRtop1; k++) {
@@ -4624,11 +4624,11 @@ void DDmodel::JcalS3D_NWR1(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD3D_NWR1(double &JDn, double &JDp){
+void ACDD::JcalD3D_NWR1(complex <double> &JDn, complex <double> &JDp){
 
     for (int j=NWRleft1; j<NWRright1; j++) {
         for (int k=NWRbottom1; k<NWRtop1; k++) {
@@ -4654,11 +4654,11 @@ void DDmodel::JcalD3D_NWR1(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalS3D_NWR2(double &JSn, double &JSp){
+void ACDD::JcalS3D_NWR2(complex <double> &JSn, complex <double> &JSp){
 
     for (int j=NWRleft1; j<NWRright1; j++) {
         for (int k=NWRbottom1; k<NWRtop1; k++) {
@@ -4685,11 +4685,11 @@ void DDmodel::JcalS3D_NWR2(double &JSn, double &JSp){
         }
     }
 
-    JSn=JSn*q0*ni_nm*VT*(-1);
+    JSn=JSn*q0*ni_nm*VT*((-1.0));
     JSp=JSp*q0*ni_nm*VT;
 }
 
-void DDmodel::JcalD3D_NWR2(double &JDn, double &JDp){
+void ACDD::JcalD3D_NWR2(complex <double> &JDn, complex <double> &JDp){
 
     for (int j=NWRleft1; j<NWRright1; j++) {
         for (int k=NWRbottom1; k<NWRtop1; k++) {
@@ -4715,11 +4715,11 @@ void DDmodel::JcalD3D_NWR2(double &JDn, double &JDp){
         }
     }
 
-    JDn=JDn*q0*ni_nm*VT*(-1);
+    JDn=JDn*q0*ni_nm*VT*((-1.0));
     JDp=JDp*q0*ni_nm*VT;
 }
 
-void DDmodel::FindNWRBC1(){
+void ACDD::FindNWRBC1(){
 
     //find center point
     for(int j=0;j<py;j++){
@@ -4786,7 +4786,7 @@ void DDmodel::FindNWRBC1(){
 
 }
 
-void DDmodel::FindNWRBC2(){
+void ACDD::FindNWRBC2(){
 
     //find center point
     for(int j=0;j<py;j++){
@@ -4852,7 +4852,7 @@ void DDmodel::FindNWRBC2(){
     //cerr << "(NWRleft2,NWRright2)="<<"("<<NWRleft2<<","<<NWRright2<<")"<<endl;
 }
 
-void DDmodel::AddDot3D(double DotXCenter, double DotYCenter, int Flag){
+void ACDD::AddDot3D(double DotXCenter, double DotYCenter, int Flag){
 
     double volume=0;
     double DotZCenter=SubstrateThickness+BOX+2*NWRradiusz+Tox+AnalyteRadius+ReceptorLength;
@@ -4899,7 +4899,7 @@ void DDmodel::AddDot3D(double DotXCenter, double DotYCenter, int Flag){
 }
 
 
-void DDmodel::AddDotString3D(double Yshift){
+void ACDD::AddDotString3D(double Yshift){
 
     double DotDistance=NWRLength/DotNumber;
 
@@ -4907,4 +4907,3 @@ void DDmodel::AddDotString3D(double Yshift){
         AddDot3D(JunctionLength+DotDistance/2+DotDistance*i,(NWRCentery1+NWRCentery2)/2-Yshift,i+1000);
     }
 }
-

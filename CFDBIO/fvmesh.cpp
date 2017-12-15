@@ -89,6 +89,23 @@ void FVMesh::FVMesh_CFDStructurePatameterSet2D(){
 
     lx=400*1000;
     ly=200*1000;
+    ElectrodeGap=20*1000;
+    ElectrodeWidth=50*1000;
+    ReferenceGateWidth=20*1000;
+
+}
+
+void FVMesh::FVMesh_CFDStructurePatameterSet3D(){
+
+    cout << "3D CFD Simulation."<<endl;
+
+    lx=400*1000;
+    ly=400*1000;
+    lz=400*1000;
+    ElectrodeGap=20*1000;
+    ElectrodeWidth=50*1000;
+    Electrodelength=50*1000;
+    ReferenceGateWidth=20*1000;
 
 }
 
@@ -391,53 +408,52 @@ void FVMesh::FVMesh_CFDMeshParameterSet2D(){
     //NWRradiusy=lx/20;
 
     // xyz block numbers.
-    Mx=1;
-    My=1;
+    Mx=3;
+    My=2;
     // set xy pins
     xpin=new double [Mx+1];
     ypin=new double [My+1];
+    /*
     for(int i=0;i<Mx+1;i++){
         xpin[i]=0+lx/Mx*i;
     }
-    /*
-    xpin[0]=0;
-    xpin[1]=lx/2-NWR-(1000-fmod(NWR,1000));
-    xpin[2]=lx/2+NWR+(1000-fmod(NWR,1000));;
-    xpin[3]=lx;
     */
+    xpin[0]=0;
+    xpin[1]=lx/2-ElectrodeGap/2-ElectrodeWidth*1.2;
+    xpin[2]=lx/2+ElectrodeGap/2+ElectrodeWidth*1.2;
+    xpin[3]=lx;
+    /*
     for(int i=0;i<My+1;i++){
         ypin[i]=0+ly/My*i;
     }
-    /*
+    */
     ypin[0]=0;
-    ypin[1]=50;
-    ypin[2]=1000;
+    ypin[1]=50*1000;
+    ypin[2]=ly;
+    /*
     ypin[3]=200000;
     */
     // set xy mesh steps
     meshx=new double [Mx];
     meshy=new double [My];
     // mesh unit = 1/nm = 1/step
+    /*
     for(int i=0;i<Mx;i++){
         meshx[i]=0.001*(i+1);
     }
-    /*
-    meshx[0]=1e-3;
-    meshx[1]=1e-2;
-    meshx[2]=1e-3;
     */
+    meshx[0]=5e-4;
+    meshx[1]=1e-3;
+    meshx[2]=5e-4;
+
+    /*
     for(int i=0;i<My;i++){
         meshy[i]=0.001*(i+1);
     }
-
-    /*
-    meshx[3]=1e-2;
-    meshx[4]=1e-3;
-
     meshy[0]=1;
-    meshy[1]=2e-2;
-    meshy[2]=1e-3;
     */
+    meshy[0]=1e-3;
+    meshy[1]=5e-4;
 
     //set initial value(minimum)
     px=py=1;
@@ -613,7 +629,6 @@ void FVMesh::FVMesh_BlockMeshingMesh3D(){
     mesh = new Mesh [L];
 
     FVMesh_MeshInitialize();
-
     for(int m=0;m<Mx;m++){
 
         double a= xpin[m];
@@ -655,6 +670,108 @@ void FVMesh::FVMesh_BlockMeshingMesh3D(){
             }
         }
     }
+}
+
+void FVMesh::FVMesh_CFDMeshParameterSet3D(){
+
+    //Dimensions number
+    Dimension=3;
+
+    //sensor surface
+    //NWRradiusy=lx/20;
+
+    // xyz block numbers.
+    Mx=3;
+    My=3;
+    Mz=2;
+    // set xy pins
+    xpin=new double [Mx+1];
+    ypin=new double [My+1];
+    zpin=new double [Mz+1];
+    /*
+    for(int i=0;i<Mx+1;i++){
+        xpin[i]=0+lx/Mx*i;
+    }
+    */
+    xpin[0]=0;
+    xpin[1]=lx/2-ElectrodeGap/2-ElectrodeWidth*2;
+    xpin[2]=lx/2+ElectrodeGap/2+ElectrodeWidth*2;
+    xpin[3]=lx;
+
+    /*
+    for(int i=0;i<My+1;i++){
+        ypin[i]=0+ly/My*i;
+    }
+    */
+    ypin[0]=0;
+    ypin[1]=ly/2-Electrodelength*2;
+    ypin[2]=ly/2+Electrodelength*2;
+    ypin[3]=ly;
+
+
+    zpin[0]=0;
+    zpin[1]=100*1000;
+    zpin[2]=lz;
+
+    // set xy mesh steps
+    meshx=new double [Mx];
+    meshy=new double [My];
+    meshz=new double [Mz];
+    // mesh unit = 1/nm = 1/step
+    /*
+    for(int i=0;i<Mx;i++){
+        meshx[i]=0.001*(i+1);
+    }
+    */
+    meshx[0]=1e-4;
+    meshx[1]=5e-4;
+    meshx[2]=1e-4;
+
+    /*
+    for(int i=0;i<My;i++){
+        meshy[i]=0.001*(i+1);
+    }
+    meshy[0]=1;
+    */
+
+    meshy[0]=1e-4;
+    meshy[1]=5e-4;
+    meshy[2]=1e-4;
+
+    meshz[0]=5e-4;
+    meshz[1]=1e-4;
+
+    //set initial value(minimum)
+    px=py=pz=1;
+
+    // points calculation
+    for(int i=0;i<Mx;i++){
+        px=px+meshx[i]*(xpin[i+1]-xpin[i]);
+    }
+    for(int i=0;i<My;i++){
+        py=py+meshy[i]*(ypin[i+1]-ypin[i]);
+    }
+    for(int i=0;i<Mz;i++){
+        pz=pz+meshz[i]*(zpin[i+1]-zpin[i]);
+    }
+    // set xyz  point numbers till each block
+    xb=new int [Mx+1];
+    yb=new int [My+1];
+    zb=new int [Mz+1];
+
+    for(int i=1;i<Mx+1;i++){
+        xb[0]=0;
+        xb[i]=xb[i-1]+(xpin[i]-xpin[i-1])*meshx[i-1];
+    }
+    for(int i=1;i<My+1;i++){
+        yb[0]=0;
+        yb[i]=yb[i-1]+(ypin[i]-ypin[i-1])*meshy[i-1];
+    }
+    for(int i=1;i<Mz+1;i++){
+        zb[0]=0;
+        zb[i]=zb[i-1]+(zpin[i]-zpin[i-1])*meshz[i-1];
+    }
+    L=px*py*pz;
 }
 
 void FVMesh::FVMesh_MeshInitialize(){
@@ -749,8 +866,12 @@ void FVMesh::FVMesh_PrintMeshParameter2D(){
 void FVMesh::FVMesh_PrintMeshParameter3D(){
 
     fstream output;
-    output.open("MeshParameter3D.txt", fstream::out | fstream::app);
+    output.open("MeshParameter3D.txt", fstream::out | fstream::trunc);
     output << "lx="<<lx<< " ly="<<ly<< " lz="<<lz<< endl;
+    output << "ElectrodeGap="<<ElectrodeGap<<endl;
+    output << "ElectrodeWidth="<<ElectrodeWidth<<endl;
+    output << "Electrodelength="<<Electrodelength<<endl;
+    output << "ReferenceGateWidth="<<ReferenceGateWidth<<endl;
     output << "NWRLength="<<NWRLength<< " NWRadiusx="<<NWRradiusy<< " NWRadiusz="<<NWRradiusz<< endl;
     output << "NWRCentery="<<NWRCentery1<< " NWRCenterz="<<NWRCenterz1<< " JunctionLength="<<JunctionLength<< endl;
     output << "SubstrateThickness="<<SubstrateThickness<< " BOX="<<BOX<< " Tox="<<Tox<< endl;

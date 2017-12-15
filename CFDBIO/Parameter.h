@@ -32,7 +32,7 @@ const double Ta2O5_permi=25;
 
 const double eta = 1e-21;       // N*s/nm^2, Viscousity in nm
 const double eta_m=eta*1e18;
-const double Drho= 1e-24;       // kg/nm^3 , Density
+const double Drho= 1e-24;       // kg/nm^3 , Density. 1g/cm3=1e-3g/m3=1e-6kg/m3=1e-24kg/m3
 const double Si_Eg=1.12;
 const double Si_chi=4.05;
 const double Si_me=1.09;
