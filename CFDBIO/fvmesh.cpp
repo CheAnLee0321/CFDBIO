@@ -101,11 +101,11 @@ void FVMesh::FVMesh_CFDStructurePatameterSet3D(){
 
     lx=400*1000;
     ly=400*1000;
-    lz=400*1000;
+    lz=200*1000;
     ElectrodeGap=20*1000;
     ElectrodeWidth=50*1000;
     Electrodelength=50*1000;
-    ReferenceGateWidth=20*1000;
+    ReferenceGateWidth=400*1000;
 
 }
 
@@ -428,7 +428,7 @@ void FVMesh::FVMesh_CFDMeshParameterSet2D(){
     }
     */
     ypin[0]=0;
-    ypin[1]=50*1000;
+    ypin[1]=100*1000;
     ypin[2]=ly;
     /*
     ypin[3]=200000;
@@ -902,7 +902,7 @@ void FVMesh::FVMesh_PrintMeshParameter3D(){
     }
     output <<endl;
 
-    output << "px="<<px<< " py="<<py<< " pz="<<pz<< endl;
+    output << "px="<<px<< " py="<<py<< " pz="<<pz<< " L="<<L<< endl;
 
     output.close();
 }

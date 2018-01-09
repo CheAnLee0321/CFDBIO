@@ -8,7 +8,8 @@ SOURCES += main.cpp \
     cfd.cpp \
     montecarlo.cpp \
     fvmesh.cpp \
-    cdmodel.cpp
+    cdmodel.cpp \
+    acdd.cpp
 
 HEADERS += \
     ddmodel.h \
@@ -16,7 +17,8 @@ HEADERS += \
     montecarlo.h \
     fvmesh.h \
     Parameter.h \
-    cdmodel.h
+    cdmodel.h \
+    acdd.h
 
 QMAKE_CXXFLAGS += -fopenmp
 LIBS += -fopenmp

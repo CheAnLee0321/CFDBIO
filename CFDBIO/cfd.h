@@ -55,6 +55,7 @@ public:
     void CFD_NSParameter();
     void CFD_NSInitialGuessComplex2D();
     void CFD_NSInitialGuessComplex3D();
+    void CFD_NewAndInitialize();
     void CFD_SIMPLE2D();
     void CFD_SIMPLER2D();
     void CFD_SIMPLER3D();
@@ -123,13 +124,18 @@ public:
     void CFD_PrintVy2D(const char *path);
     void CFD_PrintMaterialComplex2D(const char *path);
     void CFD_PrintMaterialComplex3D(const char *path);
+    void CFD_PrintVelocity2D(const char *path);
     void CFD_PrintVelocity3D(const char *path);
+    void CFD_PrintPotential2D(const char *path);
     void CFD_PrintPotential3D(const char *path);
     void CFD_ReadMaterialComplex2D(const char *path);
     void CFD_ReadMaterialComplex3D(const char *path);
     void CFD_ReadVelocity3D(const char *path);
     void CFD_ReadPotential3D(const char *path);
-    void CFD_MaxSpeed();
+    void CFD_ReadVelocity2D(const char *path);
+    void CFD_ReadPotential2D(const char *path);
+    void CFD_MaxSpeed2D();
+    void CFD_MaxSpeed3D();
 
     //CFD Poisson Solver
     void CFD_Initialize();

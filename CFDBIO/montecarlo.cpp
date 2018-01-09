@@ -20,6 +20,12 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
 
     ModeT=1;
 
+    //if using 3D field, lx ly lz is smae with meshing
+    //if using 2D field, have to match the  coordinate system manually.
+    lx=400*1000;
+    ly=50*1000;
+    lz=200*1000;
+
     /*ModeT=1, BM
      *ModeT=2, EO
      *ModeT=3, BMEO
@@ -28,36 +34,34 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
      *ModeT=6, BMEOEP
      */
 
-    lx=1000*1000;
-    ly=1000*1000;
-    lz=1000*1000;
-
     //Sensor Area
-    SensorWidth=5*1000;
-    SensorLength=1000;
+    SensorWidth=20*1000;
+    SensorLength=50*1000;
     ReceptorMesh=10;
 
     //
-    WireWidth=10;
-    WireSpacing=40;  //Wire edge to wire edge
+    WireWidth=20;
+    WireSpacing=80;  //Wire edge to wire edge
 
     WireN=SensorWidth/(WireWidth+WireSpacing);
 
     t=1000;        //time, s.
-    tau=1e-4;   //time step
+    tau=1e-3;   //time step
     TN=t/tau+1; //nubmer of steps
 
-    AnalyteRadius_m=10e-9;     //Particle radius [m]
+    AnalyteRadius_m=5e-9;     //Particle radius [m]
 
     AnalyteRadius_nm=AnalyteRadius_m*1e9;
     AnalyteMass=150*1000*1.6605e-27; //1.6605e-27*1000*150; //mass, kg. 1 Dalton = 1.6605e-27 kg
     AnalyteValence=-10;
-    DotN=602/20;   //1mM = 1 mol/m3, Avogadro = 6.0221409e23
+    DotN=964;   //1mM = 1 mol/m3, Avogadro = 6.0221409e23
 
+    int Output_frame=200;
 
-    OutputFrame=1;
-    OutputTimeStep=(TN-1)/OutputFrame; //output trajtory every N step
+    OutputTimeStepsPerFrame=0.05/tau; //Each ouput trajactory frame contains X tau steps.
+    OutputTime=Output_frame*0.05;     //Print trajactory within X sec
     OutputMoleculeNumber=DotN;  //output first X molecules trajtory
+    ReportTimeSection=10; // Report on screen each X sec.
 
     D=kb*Tamb/(6*M_PI*eta_m*AnalyteRadius_m);
     gamma=6*M_PI*eta_m*AnalyteRadius_m;
@@ -65,18 +69,21 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
     tauB=AnalyteMass/gamma;
 
     cout <<"t="<<t<< " tau="<<tau<<endl;
-    cout <<"tauB="<<tauB<<endl;
+    //cout <<"tauB="<<tauB<<endl;
 
     SigmaDist=sqrt(2*D*tau); //Standard Deviation for random displacement, m.
 
     g=2*gamma*kb*Tamb;
     SigmaForce=sqrt(g/tau); //Standard Deviation for random force, N.
 
+    //cout << SigmaForce/AnalyteMass*tauB*tau*1e9 << endl;
+    //cout << SigmaDist*1e9  << endl;
+
     sigma=1;
     mean=0;
 
+
     cout <<"D="<< D*1e18 <<" [nm^2/s], sqrt(D*tau)="<<sqrt(D*1e18*tau)<<" [nm]"<<endl;
-    //cout << "Analyte Concentration = "<<DotN/(lx*ly*lz)*1e27/6.02e23 <<" (mol/m3)"<<endl;
 
     Wb=SigmaDist*1e9; // Brownian Motion depletion width, nm.
 
@@ -140,9 +147,7 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
     double N_collision=0.25*DotN*Vrms/(Volume);
     double N_collisiononSensor=N_collision*SensorLength*SensorWidth*1e-18;
 
-
-
-
+    /*
     cout <<"Maximum capture probability per time step = R1N="<<R1N << endl;
     cout <<"Maximum capture probability per time step for RSA2= R1N_cylindrical="<<R1N_cylindrical << endl;
     cout <<"Maximun tau for first order boundary = " << tau/R1N << endl;
@@ -153,7 +158,12 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
     cout <<"Number of collisions per unit time per area ="<<N_collision<<" N/(m2*s)" << endl;
     cout <<"Number of collisions per unit time on sensor ="<<N_collisiononSensor<<" N/s" << endl;
     cout <<"N_AB x k_backward1 = N_collisiononSensor, AB = "<<N_collisiononSensor/k_backward1<<" N/s" << endl;
-    cout << "Mole Concentration="<<C_A<<" mol/m3 ="<< C_A*1e3<<" M"<<endl;
+    */
+    if(lz!=0){
+        cout << "DotN="<<DotN<<" Mole Concentration="<<(DotN/6.02e23)/((lx*ly*lz)*1e-27)<<" mol/m3 ="<< C_A*1e3<<" M"<<endl;
+    }else{
+        cout << "DotN="<<DotN<<" Mole Concentration="<<(DotN/6.02e23)/((lx*ly)*1e-18)<<" mol/m2"<<endl;
+    }
 
     fstream output;
     output.open("ParticleTracingParameter3D.txt", fstream::out | fstream::trunc);
@@ -233,12 +243,13 @@ void MonteCarlo::MC_ParticleTracingParameter3D(){
 void MonteCarlo::MC_ParticleTracingNew(){
 
     Analyte=new target*[DotN];
+
 #pragma omp parallel for
     for(int i=0;i<DotN;i++){
         Analyte[i]=new target[2];
     }
 
-    ReceptorArray=new receptor [RL];
+    //ReceptorArray=new receptor [RL];
 
     ParticleOnWire=new int [WireN];
 }
@@ -259,11 +270,15 @@ void MonteCarlo::MC_ParticleTracingInitialize3D(){
 
 #pragma omp parallel for
     for(int i=0;i<DotN;i++){
-        Analyte[i][0].coordX=rand() / (double)RAND_MAX*(lx); // initial coordinate
-        Analyte[i][0].coordY=rand() / (double)RAND_MAX*(ly);
-        Analyte[i][0].coordZ=rand() / (double)RAND_MAX*(lz);
+        Analyte[i][0].coordX=rand()/(double)RAND_MAX*(lx); // initial coordinate
+        Analyte[i][0].coordY=rand()/(double)RAND_MAX*(ly);
+        Analyte[i][0].coordZ=rand()/(double)RAND_MAX*(lz);
+        //Analyte[i][0].coordX=lx/2-0.1*lx + rand()/(double)RAND_MAX*(0.2*lx); // initial coordinate
+        //Analyte[i][0].coordY=ly/2-0.1*ly + rand()/(double)RAND_MAX*(0.2*ly);
+        //Analyte[i][0].coordZ=rand()/(double)RAND_MAX*(0.1*lz);
     }
 
+    /*
     double deltaX=ReceptorMesh;
     double deltaY=ReceptorMesh;
 
@@ -278,11 +293,13 @@ void MonteCarlo::MC_ParticleTracingInitialize3D(){
             ReceptorArray[pointer].AB=C_AB;
         }
     }
+    */
 
 #pragma omp parallel for
     for(int i=0;i<WireN;i++){
         ParticleOnWire[i]=0;
     }
+
 }
 
 void MonteCarlo::MC_ParticleTracingSimulation3D(){
@@ -291,38 +308,32 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
     int TotalCapture_now=0;
     int TotalCapture_previous=0;
     int CapturedOnSensor_now=0;
-
     int TotalParticleOnWires_now=0;
     int TotalParticleOnWires_previous=0;
+    int TotalExcitedWire=0;
 
     stringstream Statistic1;
     string Statistic2;
-
     Statistic1<<"Statistic"<<ModeT<<".txt";
     Statistic2=Statistic1.str();
 
     // output 1 print Statistic
     fstream output1;
-
     output1.open(Statistic2.c_str(), fstream::out | fstream::trunc);
-
-    output1.precision(8);
-
-    output1 << "T(1)\tN(2)\tAll(3)\tIn(4)\tOut(5)\tReff(6)\t #"<<endl;
+    output1.precision(7);
+    output1 << "T(1)\tN(2)\tAll(3)\tIn(4)\tOut(5)\tReff(6)\tRSA sat. R(7) #"<<endl;
     output1 <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
-    output1 << 0*tau << '\t'<< 0 << '\t'<< TotalCapture_now << '\t' << CapturedOnSensor_now <<'\t'<< TotalCapture_now-CapturedOnSensor_now  <<'\t' << CapturedOnSensor_now/(double)TotalCapture_now<<'\t'<<endl;
+    output1 << 0*tau << '\t'<< 0 << '\t'<< TotalCapture_now << '\t' << CapturedOnSensor_now <<'\t'<< TotalCapture_now-CapturedOnSensor_now  <<'\t' << CapturedOnSensor_now/(double)TotalCapture_now<<'\t'<< 0 <<endl;
 
     stringstream ParticleOnWire1;
     string ParticleOnWire2;
-
     ParticleOnWire1<<"ParticleOnWire"<<ModeT<<".txt";
     ParticleOnWire2=ParticleOnWire1.str();
 
-    // output 2 print ParticleOnWire
+    // output 4 print ParticleOnWire
     fstream output4;
-
     output4.open(ParticleOnWire2.c_str(), fstream::out | fstream::trunc);
-    output4 << "T(1)\tN(2)\tTotal(3)\tWire_1(4)\tWire_2(5)\tWire_3(6)\t #"<<endl;
+    output4 << "T(1)\tExcitedW(2)\tTotalN(3)\tWire_1(4)\tWire_2(5)\tWire_3(6)\t #"<<endl;
     output4 <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
     output4 << 0*tau << '\t'<< 0 << '\t' << TotalParticleOnWires_now << '\t' ;
     for(int i=0;i<WireN;i++){
@@ -331,6 +342,8 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
     output4 << endl;
 
 
+    // output 2 print Traj
+    MC_PrintTrojactory(0);
 
     /*
      *ModeT=1, BM
@@ -338,15 +351,27 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
      *ModeT=3, BMEO
      *ModeT=4, EP
      *ModeT=5, BMEP
-     *ModeT=6, BMEOEP
+     *ModeT=6, BMEOEP8
      */
 
-    k_forward=k_forward1;
-    k_backward=k_backward1;
+    //k_forward=k_forward1;
+    //k_backward=k_backward1;
 
-    for(int j=1;j<TN;j++){
+    int StepUnit=ReportTimeSection/tau;
 
-    #pragma omp parallel for
+    int j=0;
+
+    do{
+        TotalParticleOnWires_previous=TotalParticleOnWires_now;
+        TotalCapture_previous=TotalCapture_now;
+
+        j=j+1;
+
+        if(j%StepUnit==0){
+            cout << "T=" << j*tau << " seconds. "<< j*tau/t*100 <<"% " << endl;
+        }
+
+        #pragma omp parallel for
         for(int i=0;i<DotN;i++){
 
             /*
@@ -362,99 +387,88 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
             }
             */
 
-
             if(Analyte[i][1].flag==-1){
+
                 // if particle is not captured.
 
                 double sumX=0,sumY=0,sumZ=0;
-                double avgVx=0;
-                double avgVy=0;
-                double avgVz=0;
 
-
-                int pointer = 0;
-                //calculate pointer
-                int I=0,J=0,K=0;
-                int pointer_ip = 0;
-                int pointer_jp = 0;
-                int pointer_kp = 0;
-                int pointer_ijp = 0;
-                int pointer_ikp = 0;
-                int pointer_jkp = 0;
-                int pointer_ijkp = 0;
-
-                //avgV
-                if(ModeT!=1){
-                    //Find I
-                    I=MC_ParticleTracing3DFindI(i, 0);
-                    //Find J
-                    J=MC_ParticleTracing3DFindJ(i, 0);
-                    //Find K
-                    K=MC_ParticleTracing3DFindK(i, 0);
-
-                    pointer = (px)*(px)*(K) + (px)*(J) + (I);
-                    pointer_ip = (px)*(px)*(K) +  (px)*(J) + (I+1);
-                    pointer_jp = (px)*(px)*(K) +  (px)*(J+1) + (I);
-                    pointer_kp = (px)*(px)*(K+1) +  (px)*(J) + (I);
-                    pointer_ijp = (px)*(px)*(K) + (px)*(J+1) + (I+1);
-                    pointer_ikp = (px)*(px)*(K+1) +  (px)*(J) + (I+1);
-                    pointer_jkp = (px)*(px)*(K+1) +  (px)*(J+1) + (I);
-                    pointer_ijkp = (px)*(px)*(K+1) +  (px)*(J+1) + (I+1);
-
-                    if(ModeT==2||ModeT==3||ModeT==6){
-                        avgVx=(CFDmaterial[pointer].ui+CFDmaterial[pointer_ip].ui+CFDmaterial[pointer_jp].ui+CFDmaterial[pointer_kp].ui
-                               +CFDmaterial[pointer_ijp].ui+CFDmaterial[pointer_ikp].ui+CFDmaterial[pointer_jkp].ui+CFDmaterial[pointer_ijkp].ui)/8.0;
-                        avgVy=(CFDmaterial[pointer].vi+CFDmaterial[pointer_ip].vi+CFDmaterial[pointer_jp].vi+CFDmaterial[pointer_kp].vi
-                               +CFDmaterial[pointer_ijp].vi+CFDmaterial[pointer_ikp].vi+CFDmaterial[pointer_jkp].vi+CFDmaterial[pointer_ijkp].vi)/8.0;
-                        avgVz=(CFDmaterial[pointer].wi+CFDmaterial[pointer_ip].wi+CFDmaterial[pointer_jp].wi+CFDmaterial[pointer_kp].wi
-                               +CFDmaterial[pointer_ijp].wi+CFDmaterial[pointer_ikp].wi+CFDmaterial[pointer_jkp].wi+CFDmaterial[pointer_ijkp].wi)/8.0;
-                    }
-                }
-
-                sumX=0;
-                sumY=0;
-                sumZ=0;
                 //BM force
                 if(ModeT==1||ModeT==3||ModeT==5||ModeT==6){
-                    sumX=sumX+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
-                    sumY=sumY+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
-                    sumZ=sumZ+(SigmaForce*MC_NormalDistribution())/AnalyteMass*tauB*tau*1e9;   //change from m > nm
+                    sumX=sumX+SigmaDist*1e9*MC_NormalDistribution();
+                    sumY=sumY+SigmaDist*1e9*MC_NormalDistribution();
+                    sumZ=sumZ+SigmaDist*1e9*MC_NormalDistribution();
                 }
 
+
+                //Flow FieldX
+                if(ModeT==2||ModeT==3||ModeT==6){
+
+                    double avgVx=0;
+                    double avgVy=0;
+                    double avgVz=0;
+                    //calculate pointer
+                    int I=0,J=0,K=0;
+                    int pointer = 0;
+
+                    /*
+                    //Using 3D Field
+                    //Find IJK
+                    I=MC_ParticleTracing3DFindI(i, 0);
+                    J=MC_ParticleTracing3DFindJ(i, 0);
+                    K=MC_ParticleTracing3DFindK(i, 0);
+                    pointer = (px)*(py)*(K) + (px)*(J) + (I);
+                    avgVx=CFDmaterial[pointer].ui;
+                    avgVy=CFDmaterial[pointer].vi;
+                    avgVz=CFDmaterial[pointer].wi;
+                    */
+
+                    /*
+                    */
+                    //Using 2D Field
+                    //Find IJK
+                    I=MC_ParticleTracing3DFindI(i, 0);
+                    J=MC_ParticleTracing3DFindJ_In2DField(i, 0);
+                    pointer = (px)*(J) + (I);
+
+                    avgVx=CFDmaterial[pointer].ui;
+                    avgVy=0;
+                    avgVz=CFDmaterial[pointer].vi;
+
+                    sumX=sumX+avgVx*tau;
+                    sumY=sumY+avgVy*tau;
+                    sumZ=sumZ+avgVz*tau;
+                }
+
+                TotalCapture_previous=TotalCapture_now;
+
+                /*
                 //EP forceX
                 if(ModeT==4||ModeT==5||ModeT==6){
                     sumX=sumX+(80*(e0*1e9)*CFDmaterial[pointer].Ex*ZetaV/eta_m*tau)*1e9;
                     sumY=sumY+(80*(e0*1e9)*CFDmaterial[pointer].Ey*ZetaV/eta_m*tau)*1e9;
                     sumZ=sumZ+(80*(e0*1e9)*CFDmaterial[pointer].Ez*ZetaV/eta_m*tau)*1e9;
                 }
+                */
 
-                //Flow FieldX
-                if(ModeT==2||ModeT==3||ModeT==6){
-                    sumX=sumX+avgVx*tau;
-                    sumY=sumY+avgVy*tau;
-                    sumZ=sumZ+avgVz*tau;
-                }
 
-                //totalX
+                //total XYZ
                 Analyte[i][1].coordX=Analyte[i][0].coordX+sumX;
-
-                //totalY
                 Analyte[i][1].coordY=Analyte[i][0].coordY+sumY;
-
-                //totalZ
                 Analyte[i][1].coordZ=Analyte[i][0].coordZ+sumZ;
-
 
                 //BC
                 //Stick
-                //StickBoundary(i,1);
+                //MC_StickBoundary_onSensor(i,1);
+                //MC_StickBoundary_BottomSurface(i,1);
                 //RSA
-                MC_RSABoundary(i,1);
-                //FirstOrderBoundar
-                //FirstOrderBoundary(i,1);
-                //FirstOrderBoundary_FiniteR(i,1);
-                //FirstOrderBoundary_RSA1(i,1);
-                //FirstOrderBoundary_RSA2(i,1);
+                MC_RSABoundary_onSensor(i,1);
+                //MC_RSABoundary_BottomSurface(i,1);
+                //FirstOrderBoundary
+                //MC_FirstOrderBoundary(i,1);
+                //MC_FirstOrderBoundary_FiniteR(i,1);
+                //MC_FirstOrderBoundary_RSA1(i,1);
+                //MC_FirstOrderBoundary_RSA2(i,1);
 
             }else{
                 Analyte[i][1].coordX=Analyte[i][0].coordX;
@@ -463,10 +477,12 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
             }
         }
 
+
         //Reset Counter
         TotalCapture_now=0;
         CapturedOnSensor_now=0;
         TotalParticleOnWires_now=0;
+        TotalExcitedWire=0;
 
         for(int i=0;i<WireN;i++){
             ParticleOnWire[i]=0;
@@ -487,71 +503,54 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
 
                 //On wire
                 for(int j=0;j<WireN;j++){
-                    if(abs(Analyte[i][1].coordX-(lx/2-SensorWidth/2)-(((WireWidth+WireSpacing)/2+j*WireWidth+WireSpacing)))< WireWidth/2){
+                    double A=Analyte[i][1].coordX-(lx/2-SensorWidth/2);
+                    double B=(((WireWidth+WireSpacing)/2+j*WireWidth+WireSpacing));
+                    if(abs(A-B)< WireWidth/2){
                         TotalParticleOnWires_now=TotalParticleOnWires_now+1;
                         ParticleOnWire[j]=ParticleOnWire[j]+1;
                     }
                 }
             }
         }
+
+
+        //Excited Wire
+        for(int j=0;j<WireN;j++){
+            if(ParticleOnWire[j]!=0){
+                TotalExcitedWire=TotalExcitedWire+1;
+            }
+        }
+
         // Output when total capture particles is increased.
         if(TotalCapture_now!=TotalCapture_previous){
             output1 << j*tau << '\t'<< j << '\t'<< TotalCapture_now << '\t' << CapturedOnSensor_now <<'\t'<< TotalCapture_now-CapturedOnSensor_now  <<'\t' << CapturedOnSensor_now/(double)TotalCapture_now<<'\t'<<((double)TotalCapture_now)/((double)MaximumCaptureNumberRSA2)<<endl;
         }
 
-        TotalCapture_previous=TotalCapture_now;
-
-
         // Output when total capture particles on wire is increased.
         if(TotalParticleOnWires_now!=TotalParticleOnWires_previous){
-            output4 << j*tau << '\t'<< j << '\t' << TotalParticleOnWires_now << '\t' ;
+            output4 << j*tau << '\t'<< TotalExcitedWire << '\t' << TotalParticleOnWires_now << '\t' ;
             for(int i=0;i<WireN;i++){
                 output4 << ParticleOnWire[i] << '\t';
             }
             output4 << endl;
         }
 
-        TotalParticleOnWires_previous=TotalParticleOnWires_now;
 
-
+        /*
         //Output Traj
-        if(OutputTimeStep!=0){
-            if(j%OutputTimeStep==0){
+        if(j*tau<=OutputTime){
+            if(j%OutputTimeStepsPerFrame==0){
 
-                stringstream Traj1;
-                string Traj2;
-
-                Traj1<<"Traj"<<ModeT<<"-"<<int(j/OutputTimeStep)<<".txt";
-                Traj2=Traj1.str();
-
-                // output 2 print Trajactory
-                fstream output2;
-
-                output2.open(Traj2.c_str(), fstream::out | fstream::trunc);
-
-                output2.precision(8);
-
-                output2 << "N(1)\t";
-                for(int i=0;i<3;i++){
-                    output2 << "coordX("<<i*4+2<<")("<<i<<")\tcoordY("<<i*4+3<<")("<<i<<")\tcoordZ("<<i*4+4<<")("<<i<<")\tflag("<<i*4+5<<")\t";
-                }
-                output2 << "#"<<endl;
-                output2 <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
-
-
-                output2 << j << '\t';
-                for(int i=0;i<OutputMoleculeNumber;i++){
-                    output2 <<scientific<< Analyte[i][1].coordX << '\t' <<  Analyte[i][1].coordY << '\t' << Analyte[i][1].coordZ << '\t' << Analyte[i][1].flag << '\t';
-                }
-                    output2 << endl ;
-
-                output2.close();
+                int tail=int(j/OutputTimeStepsPerFrame);
+                MC_PrintTrojactory(tail);
             }
         }
+        */
 
+        /*
         //Output Receptor
-        if(OutputTimeStep!=0){
-            if(j%OutputTimeStep==0){
+        if(OutputTime!=0){
+            if(j%OutputTimeStepsPerFrame==0){
 
                 stringstream Receptor1;
                 string Receptor2;
@@ -579,10 +578,9 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
                 output3.close();
             }
         }
-        /*
         */
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for(int i=0;i<DotN;i++){
             Analyte[i][0].flag=Analyte[i][1].flag;
             Analyte[i][0].coordX=Analyte[i][1].coordX;
@@ -590,10 +588,8 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
             Analyte[i][0].coordZ=Analyte[i][1].coordZ;
         }
 
-        if(j%(TN/10)==0){
-            cout << "T="<<10*j/(TN/10)<<"% is completed."<<endl;
-        }
-    }
+    //}while(j<TN && TotalCapture_now !=DotN);
+    }while(TotalParticleOnWires_now < 100 && TotalCapture_now !=DotN);
 
     output1 << (TN-1)*tau << '\t'<< (TN-1) << '\t'<< TotalCapture_now << '\t' << CapturedOnSensor_now <<'\t'<< TotalCapture_now-CapturedOnSensor_now  <<'\t' << CapturedOnSensor_now/(double)TotalCapture_now<<'\t'<<((double)TotalCapture_now)/((double)MaximumCaptureNumberRSA2)<<endl;
 
@@ -603,10 +599,11 @@ void MonteCarlo::MC_ParticleTracingSimulation3D(){
     }
     output4 << endl;
 
+    MC_PrintTrojactory(-1);
+
     output4.close();
     output1.close();
 }
-
 
 void MonteCarlo::MC_DirectGenerateOnSurface(){
 
@@ -674,7 +671,7 @@ void MonteCarlo::MC_DirectGenerateOnSurface(){
         Analyte[i][1].coordZ=0;
 
         //Stick
-        MC_StickBoundary(i,1);
+        MC_StickBoundary_onSensor(i,1);
     }
 
 
@@ -811,6 +808,38 @@ int MonteCarlo::MC_ParticleTracing3DFindJ(int dn, int tn){
     return J;
 }
 
+int MonteCarlo::MC_ParticleTracing3DFindJ_In2DField(int dn, int tn){
+
+    double Target=Analyte[dn][tn].coordZ;
+    int High=py-1;
+    int Low=0;
+    int Mid=0;
+    int J=0;
+
+
+    do{
+
+        Mid=(High+Low)/2;
+
+        if(Low==Mid){
+            J=Low;
+            break;
+
+        }else{
+            int pointer_Mid = (px)*(Mid) + (0);
+
+            if(Target<=mesh[pointer_Mid].coordY){
+                High=Mid;
+            }else{
+                Low=Mid;
+            }
+        }
+
+    }while(1);
+
+    return J;
+}
+
 int MonteCarlo::MC_ParticleTracing3DFindK(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordZ;
@@ -853,8 +882,8 @@ double MonteCarlo::MC_NormalDistribution(){
     double u, v;//uniform distribution
     double x;//, y;//normal distribution
 
-    u = rand() / (double)RAND_MAX; // random double from 0 to 1.
-    v = rand() / (double)RAND_MAX;
+    u = rand() / (double)(RAND_MAX); // random double from 0 to 1.
+    v = rand() / (double)(RAND_MAX);
 
     x = sqrt(-2 * log(u)) * cos(2 * M_PI * v) * sigma + mean;//M_PI=3.14159
     //y = sqrt(-2 * log(u)) * sin(2 * M_PI * v) * sigma + mean;
@@ -863,9 +892,9 @@ double MonteCarlo::MC_NormalDistribution(){
 
 }
 
-void MonteCarlo::MC_StickBoundary(int i, int j){
+void MonteCarlo::MC_StickBoundary_onSensor(int i, int j){
 
-    //Bottom BC absorb all particle who reach the sensor area.
+    //Absorb all particle who reach the sensor area.
 
     // coordX
     if(Analyte[i][j].coordX>=lx){
@@ -915,10 +944,10 @@ void MonteCarlo::MC_StickBoundary(int i, int j){
     //else no change
 }
 
-void MonteCarlo::MC_RSABoundary(int i, int j){
+void MonteCarlo::MC_RSABoundary_onSensor(int i, int j){
 
-    //Bottom BC absorb all particle who reach the sensor area.
-    //considing the molecule radius overlapping
+    //Absorb all particle who reach the sensor area.
+    //considing the molecule radius overlap
     //RSA
 
     // coordX
@@ -949,8 +978,6 @@ void MonteCarlo::MC_RSABoundary(int i, int j){
         double Xtouch=Analyte[i][j-1].coordX+(Analyte[i][j].coordX-Analyte[i][j-1].coordX)*(z2/(z1+z2));
         double Ytouch=Analyte[i][j-1].coordY+(Analyte[i][j].coordY-Analyte[i][j-1].coordY)*(z2/(z1+z2));
 
-        cerr << "Xtouch="<<Xtouch <<" Ytouch="<<Ytouch << endl;
-
         if((Xtouch>=lx/2-SensorWidth/2 && Xtouch<=lx/2+SensorWidth/2)&&(Ytouch>=ly/2-SensorLength/2 && Ytouch<=ly/2+SensorLength/2)){
 
             int CapturePermission=1; //permitted=1 prohibit=0;
@@ -974,6 +1001,105 @@ void MonteCarlo::MC_RSABoundary(int i, int j){
             }else{
                 Analyte[i][j].coordZ=0+(0-Analyte[i][j].coordZ);
             }
+        }else{
+            Analyte[i][j].coordZ=0+(0-Analyte[i][j].coordZ);
+        }
+    }
+    //else no change
+}
+
+void MonteCarlo::MC_StickBoundary_BottomSurface(int i, int j){
+
+    //Absorb all particle who reach the BottomSurface.
+
+    // coordX
+    if(Analyte[i][j].coordX>=lx){
+        Analyte[i][j].coordX=lx-abs(Analyte[i][j].coordX-lx);
+    }else if(Analyte[i][j].coordX<=0){
+        Analyte[i][j].coordX=0+abs(0-Analyte[i][j].coordX);
+    }else{
+        Analyte[i][j].coordX=Analyte[i][j].coordX;
+    }
+
+    // coordY
+    if(Analyte[i][j].coordY>=ly){
+        Analyte[i][j].coordY=ly-abs(Analyte[i][j].coordY-ly);
+    }else if(Analyte[i][j].coordY<=0){
+        Analyte[i][j].coordY=0+abs(0-Analyte[i][j].coordY);
+    }else{
+        Analyte[i][j].coordY=Analyte[i][j].coordY;
+    }
+
+    // coordZ
+    if(Analyte[i][j].coordZ>=lz){
+        Analyte[i][j].coordZ=lz-(Analyte[i][j].coordZ-lz);
+    }else if(Analyte[i][j].coordZ<=0){
+
+        double z1=abs(Analyte[i][j].coordZ-0);
+        double z2=abs(Analyte[i][j-1].coordZ-0);
+        double Xtouch=Analyte[i][j-1].coordX+(Analyte[i][j].coordX-Analyte[i][j-1].coordX)*(z2/(z1+z2));
+        double Ytouch=Analyte[i][j-1].coordY+(Analyte[i][j].coordY-Analyte[i][j-1].coordY)*(z2/(z1+z2));
+
+        Analyte[i][j].coordX=Xtouch; // overwrite previous result
+        Analyte[i][j].coordY=Ytouch;
+        Analyte[i][j].coordZ=0;
+        Analyte[i][j].flag=1;
+    }
+    //else no change
+}
+
+void MonteCarlo::MC_RSABoundary_BottomSurface(int i, int j){
+
+    //absorb all particle who reach the BottomSurface.
+    //considing the molecule radius overlap
+    //RSA
+
+    // coordX
+    if(Analyte[i][j].coordX>=lx){
+        Analyte[i][j].coordX=lx-abs(Analyte[i][j].coordX-lx);
+    }else if(Analyte[i][j].coordX<=0){
+        Analyte[i][j].coordX=0+abs(0-Analyte[i][j].coordX);
+    }else{
+        Analyte[i][j].coordX=Analyte[i][j].coordX;
+    }
+
+    // coordY
+    if(Analyte[i][j].coordY>=ly){
+        Analyte[i][j].coordY=ly-abs(Analyte[i][j].coordY-ly);
+    }else if(Analyte[i][j].coordY<=0){
+        Analyte[i][j].coordY=0+abs(0-Analyte[i][j].coordY);
+    }else{
+        Analyte[i][j].coordY=Analyte[i][j].coordY;
+    }
+
+    // coordZ
+    if(Analyte[i][j].coordZ>=lz){
+        Analyte[i][j].coordZ=lz-(Analyte[i][j].coordZ-lz);
+    }else if(Analyte[i][j].coordZ<=0){
+
+        double z1=abs(Analyte[i][j].coordZ-0);
+        double z2=abs(Analyte[i][j-1].coordZ-0);
+        double Xtouch=Analyte[i][j-1].coordX+(Analyte[i][j].coordX-Analyte[i][j-1].coordX)*(z2/(z1+z2));
+        double Ytouch=Analyte[i][j-1].coordY+(Analyte[i][j].coordY-Analyte[i][j-1].coordY)*(z2/(z1+z2));
+
+        int CapturePermission=1; //permitted=1 prohibit=0;
+
+        for(int m=0;m<DotN;m++){
+            if(m!=i){
+                if(Analyte[m][j].flag!=-1){
+                    if(pow(Analyte[m][j].coordX-Xtouch,2)+pow(Analyte[m][j].coordY-Ytouch,2)<pow(2*AnalyteRadius_nm,2)){
+                         CapturePermission=0;
+                    }
+                }
+            }
+        }
+
+        if(CapturePermission==1){
+            Analyte[i][j].coordX=Xtouch; // overwrite previous result
+            Analyte[i][j].coordY=Ytouch;
+            Analyte[i][j].coordZ=0;
+            Analyte[i][j].flag=1;
+            //cout << "capture !, j="<<j<<" m="<<Analyte[i][j].flag<<" ,i="<<ReceptorArray[receptor_flag].flag<<" "<<Analyte[i][j].coordX<<" "<<Analyte[i][j].coordY<<" "<<Analyte[i][j-1].coordY<<" "<<Analyte[i][j-2].flag<< endl;
         }else{
             Analyte[i][j].coordZ=0+(0-Analyte[i][j].coordZ);
         }
@@ -1028,9 +1154,9 @@ void MonteCarlo::MC_FirstOrderBoundary(int i, int j){
                 int I=0;
                 int J=0;
                 //Find I
-                I=MC_FirstOrderFindI(i,j);
+                I=MC_BCFindI(i,j);
                 //Find J
-                J=MC_FirstOrderFindJ(i,j);
+                J=MC_BCFindJ(i,j);
                 //Calculate pointer
                 int pointer=Rpx*(J)+(I);
 
@@ -1126,9 +1252,9 @@ void MonteCarlo::MC_FirstOrderBoundary_FiniteR(int i, int j){
                 int I=0;
                 int J=0;
                 //Find I
-                I=MC_FirstOrderFindI(i,j);
+                I=MC_BCFindI(i,j);
                 //Find J
-                J=MC_FirstOrderFindJ(i,j);
+                J=MC_BCFindJ(i,j);
                 //Calculate pointer
                 int pointer=Rpx*(J)+(I);
 
@@ -1174,7 +1300,7 @@ void MonteCarlo::MC_FirstOrderBoundary_FiniteR(int i, int j){
     //else no change
 }
 
-void MonteCarlo::MC_FirstOrderBoundary_RSA1(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary_RSA_onSensor_BlockReceptor(int i, int j){
 
     //Each receptor block can only receive one molecules
 
@@ -1231,9 +1357,9 @@ void MonteCarlo::MC_FirstOrderBoundary_RSA1(int i, int j){
                     int I=0;
                     int J=0;
                     //Find I
-                    I=MC_FirstOrderFindI(i,j);
+                    I=MC_BCFindI(i,j);
                     //Find J
-                    J=MC_FirstOrderFindJ(i,j);
+                    J=MC_BCFindJ(i,j);
                     //Calculate pointer
                     int pointer=Rpx*(J)+(I);
 
@@ -1270,9 +1396,9 @@ void MonteCarlo::MC_FirstOrderBoundary_RSA1(int i, int j){
 
 }
 
-void MonteCarlo::MC_FirstOrderBoundary_RSA2(int i, int j){
+void MonteCarlo::MC_FirstOrderBoundary_RSA_onSensor_Cylindrical(int i, int j){
 
-    //RSA without using receptor blocks
+    //RSA without using receptor blocks, using cylindrical unit volume.
 
     //Bottom BC absorb particle according to first order chemical reaction
 
@@ -1342,7 +1468,7 @@ void MonteCarlo::MC_FirstOrderBoundary_RSA2(int i, int j){
 
 }
 
-int MonteCarlo::MC_FirstOrderFindI(int dn, int tn){
+int MonteCarlo::MC_BCFindI(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordX;
     int High=Rpx-1;
@@ -1377,7 +1503,7 @@ int MonteCarlo::MC_FirstOrderFindI(int dn, int tn){
     return I;
 }
 
-int MonteCarlo::MC_FirstOrderFindJ(int dn, int tn){
+int MonteCarlo::MC_BCFindJ(int dn, int tn){
 
     double Target=Analyte[dn][tn].coordY;
     int High=Rpy-1;
@@ -1414,9 +1540,9 @@ void MonteCarlo::MC_FirstOrderRelease(int i, int j){
     int I=0;
     int J=0;
     //Find I
-    I=MC_FirstOrderFindI(i,j);
+    I=MC_BCFindI(i,j);
     //Find J
-    J=MC_FirstOrderFindJ(i,j);
+    J=MC_BCFindJ(i,j);
     //Calculate pointer
     int pointer=Rpx*(J)+(I);
 
@@ -1430,9 +1556,9 @@ void MonteCarlo::MC_FirstOrderRelease_FiniteR(int i, int j){
     int I=0;
     int J=0;
     //Find I
-    I=MC_FirstOrderFindI(i,j);
+    I=MC_BCFindI(i,j);
     //Find J
-    J=MC_FirstOrderFindJ(i,j);
+    J=MC_BCFindJ(i,j);
     //Calculate pointer
     int pointer=Rpx*(J)+(I);
 
@@ -1558,3 +1684,36 @@ void MonteCarlo::MC_Distribution(){
     output1.close();
     output2.close();
 }
+
+void MonteCarlo::MC_PrintTrojactory(int tail){
+
+    stringstream Traj1;
+    string Traj2;
+
+    Traj1<<"Traj"<<ModeT<<"-"<<tail<<".txt";
+    Traj2=Traj1.str();
+
+    // output 2 print Trajactory
+    fstream output2;
+
+    output2.open(Traj2.c_str(), fstream::out | fstream::trunc);
+
+    output2.precision(8);
+
+    output2 << "N(1)\t";
+    for(int i=0;i<3;i++){
+        output2 << "coordX("<<i*4+2<<")("<<i<<")\tcoordY("<<i*4+3<<")("<<i<<")\tcoordZ("<<i*4+4<<")("<<i<<")\tflag("<<i*4+5<<")\t";
+    }
+    output2 << "#"<<endl;
+    output2 <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+    output2 << 0 << '\t';
+    for(int i=0;i<OutputMoleculeNumber;i++){
+        output2 << Analyte[i][0].coordX << '\t' <<  Analyte[i][0].coordY << '\t' << Analyte[i][0].coordZ << '\t' << Analyte[i][0].flag << '\t';
+    }
+        output2 << endl ;
+
+    output2.close();
+}
+
+
+

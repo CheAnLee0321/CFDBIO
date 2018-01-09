@@ -27,10 +27,10 @@ public:
     ~DDmodel();
 
     //Process
-    void IdVG2D();
-    void IdVD2D();
-    void IdVG3D();
-    void IdVD3D();
+    void DD_IdVG2D();
+    void DD_IdVD2D();
+    void DD_IdVG3D();
+    void DD_IdVD3D();
     //void GComparison3D();
     //void GComparison3D_Dotshift();
     //void GComparison3D_Dotshift_2NWR();
@@ -40,166 +40,168 @@ public:
     //void RefineGComparison3D_Dotshift();
 
     // DD parameter setting
-    void DDmodelParameterSet();
+    void DD_ParameterSet();
 
     //DD Initial Guess
-    void DDInitialGuess2D();
-    void DDInitialGuessPNJunction2D();
-    void DDInitialGuessMOSFET2D();
-    void DDInitialGuessISFET2D();
+    void DD_NewAndInitialize();
+    void DD_InitialGuess2D();
+    void DD_InitialGuessPNJunction2D();
+    void DD_InitialGuessMOSFET2D();
+    void DD_InitialGuessISFET2D();
 
-    void DDInitialGuess3D();
-    void DDInitialGuessPNJunction3D();
-    void DDInitialGuessMOSFET3D();
-    void DDInitialGuessISFET3D();
-    void DDInitialGuess1NWR3D();
-    void DDInitialGuess2NWR3D();
+    void DD_InitialGuess3D();
+    void DD_InitialGuessPNJunction3D();
+    void DD_InitialGuessMOSFET3D();
+    void DD_InitialGuessISFET3D();
+    void DD_InitialGuess1NWR3D();
+    void DD_InitialGuess2NWR3D();
 
     //Poisson Solver
-    double PoissonSolver2D();
-    double PoissonGaussSeidel2D();
-    double PoissonGaussSeidelInner2D(int i, int j);
-
-    double PoissonSolver3D();
-    double PoissonGaussSeidel3D();
-    double PoissonGaussSeidelInner3D(int i, int j, int k);
+    double DD_PoissonSolver2D();
+    double DD_PoissonSolver3D();
 
     //ElectronContinuity(EC)
-    double ECSolver2D();
-    double ECTypeA2D();
-    double ECTypeB2D();
-    double ECInner2D(int i, int j);
-
-    double ECSolver3D();
-    double ECTypeA3D();
-    double ECTypeB3D();
-    double EC1NWR3D(); // NWR only
-    double EC2NWR3D(); // NWR only
-    double ECInner3D(int i, int j, int k);
+    double DD_ECSolver2D();
+    double DD_ECSolver3D();
 
     //HoleContinuity(HC)
-    double HCSolver2D();
-    double HCTypeA2D();
-    double HCTypeB2D();
-    double HCInner2D(int i, int j);
-
-    double HCSolver3D();
-    double HCTypeA3D();
-    double HCTypeB3D();
-    double HC1NWR3D(); // NWR only
-    double HC2NWR3D(); // NWR only
-    double HCInner3D(int i, int j, int k);
-
-    //BC
-    void PoissonBC2D();
-    void PoissonBC2D_PN();
-    void PoissonBC2D_MOSFET();
-    void PoissonBC2D_ISFET();
-    void ECBC2D();
-    void ECBC2D_PN();
-    void ECBC2D_MOSFET();
-    void ECBC2D_ISFET();
-    void HCBC2D();
-    void HCBC2D_PN();
-    void HCBC2D_MOSFET();
-    void HCBC2D_ISFET();
-
-    void PoissonBC3D();
-    void PoissonBC3D_PN();
-    void PoissonBC3D_MOSFET();
-    void PoissonBC3D_ISFET();
-    void PoissonBC3D_1NWR();
-    void PoissonBC3D_2NWR();
-    void ECBC3D();
-    void ECBC3D_PN();
-    void ECBC3D_MOSFET();
-    void ECBC3D_ISFET();
-    void ECBC3D_1NWR();
-    void ECBC3D_2NWR();
-    void HCBC3D();
-    void HCBC3D_PN();
-    void HCBC3D_MOSFET();
-    void HCBC3D_ISFET();
-    void HCBC3D_1NWR();
-    void HCBC3D_2NWR();
+    double DD_HCSolver2D();
+    double DD_HCSolver3D();
 
     //Tool Function
-    void PrintMaterial2D(string path);
-    void PrintMaterial3D(string path);
-    void ReadMaterial2D(string path);
-    void ReadMaterial3D(string path);
-
-    //Current Calculations
-    void Jcal2D ();
-    void Jcal2D_PN();
-    void Jcal2D_MOSFET();
-    void Jcal2D_ISFET();
-
-    void JcalS2D_PN(double &JSn, double &JSp);
-    void JcalD2D_PN(double &JDn, double &JDp);
-
-    void JcalS2D_MOSFET(double &JSn, double &JSp);
-    void JcalD2D_MOSFET(double &JDn, double &JDp);
-    void JcalB2D_MOSFET(double &JBn, double &JBp);
-
-    void JcalS2D_ISFET(double &JSn, double &JSp);
-    void JcalD2D_ISFET(double &JDn, double &JDp);
-    void JcalB2D_ISFET(double &JBn, double &JBp);
-
-    void Jcal3D();
-    void Jcal3D_PN();
-    void Jcal3D_MOSFET();
-    void Jcal3D_ISFET();
-    void Jcal3D_1NWR();
-    void Jcal3D_2NWR();
-
-    void JcalS3D_PN(double &JSn, double &JSp);
-    void JcalD3D_PN(double &JDn, double &JDp);
-
-    void JcalS3D_MOSFET(double &JSn, double &JSp);
-    void JcalD3D_MOSFET(double &JDn, double &JDp);
-    void JcalB3D_MOSFET(double &JBn, double &JBp);
-
-    void JcalS3D_ISFET(double &JSn, double &JSp);
-    void JcalD3D_ISFET(double &JDn, double &JDp);
-    void JcalB3D_ISFET(double &JBn, double &JBp);
-
-    void JcalS3D_NWR1(double &JSn, double &JSp); //NWR1
-    void JcalD3D_NWR1(double &JDn, double &JDp);
-
-    void JcalS3D_NWR2(double &JSn, double &JSp); //NWR2
-    void JcalD3D_NWR2(double &JDn, double &JDp);
-
-    //Efield Calculations
-    void EfieldCalculation2D();
-    void EfieldCalculation3D();
-
-    //Space Charge Calculations
-    void RhoCalculation2D();
-    void RhoCalculation3D();
-
-    //Parameter Calculation
-    double munCal(double T, double dopping, int f);
-    double mupCal(double T,double dopping, int f);
-    double tauNCal(double dopping);
-    double tauPCal(double dopping);
-    double SRHrecomb2D(int i, int j);
-    double SRHrecomb3D(int i, int j, int k);
+    void DD_PrintMaterial2D(string path);
+    void DD_PrintMaterial3D(string path);
+    void DD_ReadMaterial2D(string path);
+    void DD_ReadMaterial3D(string path);
 
     //Add Analyte
-    void AddDotString3D(double Yshift);
-    void AddDot3D(double DotXCenter, double DotYCenter, int AnalyteFlag);
-
-    //Find NWR BC
-    void FindNWRBC1();
-    void FindNWRBC2();
+    void DD_AddDotString3D(double Yshift);
+    void DD_AddDot3D(double DotXCenter, double DotYCenter, int AnalyteFlag);
 
 private:
+    //Poisson Solver
+    double DD_PoissonGaussSeidel2D();
+    double DD_PoissonGaussSeidelInner2D(int i, int j);
+    double DD_PoissonGaussSeidel3D();
+    double DD_PoissonGaussSeidelInner3D(int i, int j, int k);
+
+    //ElectronContinuity(EC)
+    double DD_ECTypeA2D();
+    double DD_ECTypeB2D();
+    double DD_ECInner2D(int i, int j);
+    double DD_ECTypeA3D();
+    double DD_ECTypeB3D();
+    double DD_EC1NWR3D(); // NWR only
+    double DD_EC2NWR3D(); // NWR only
+    double DD_ECInner3D(int i, int j, int k);
+
+    //HoleContinuity(HC)
+    double DD_HCTypeA2D();
+    double DD_HCTypeB2D();
+    double DD_HCInner2D(int i, int j);
+    double DD_HCTypeA3D();
+    double DD_HCTypeB3D();
+    double DD_HC1NWR3D(); // NWR only
+    double DD_HC2NWR3D(); // NWR only
+    double DD_HCInner3D(int i, int j, int k);
+
+    //BC
+    void DD_PoissonBC2D();
+    void DD_PoissonBC2D_PN();
+    void DD_PoissonBC2D_MOSFET();
+    void DD_PoissonBC2D_ISFET();
+    void DD_ECBC2D();
+    void DD_ECBC2D_PN();
+    void DD_ECBC2D_MOSFET();
+    void DD_ECBC2D_ISFET();
+    void DD_HCBC2D();
+    void DD_HCBC2D_PN();
+    void DD_HCBC2D_MOSFET();
+    void DD_HCBC2D_ISFET();
+    void DD_PoissonBC3D();
+    void DD_PoissonBC3D_PN();
+    void DD_PoissonBC3D_MOSFET();
+    void DD_PoissonBC3D_ISFET();
+    void DD_PoissonBC3D_1NWR();
+    void DD_PoissonBC3D_2NWR();
+    void DD_ECBC3D();
+    void DD_ECBC3D_PN();
+    void DD_ECBC3D_MOSFET();
+    void DD_ECBC3D_ISFET();
+    void DD_ECBC3D_1NWR();
+    void DD_ECBC3D_2NWR();
+    void DD_HCBC3D();
+    void DD_HCBC3D_PN();
+    void DD_HCBC3D_MOSFET();
+    void DD_HCBC3D_ISFET();
+    void DD_HCBC3D_1NWR();
+    void DD_HCBC3D_2NWR();
+
+    //Current Calculations
+    void DD_Jcal2D ();
+    void DD_Jcal2D_PN();
+    void DD_Jcal2D_MOSFET();
+    void DD_Jcal2D_ISFET();
+
+    void DD_JcalS2D_PN(double &JSn, double &JSp);
+    void DD_JcalD2D_PN(double &JDn, double &JDp);
+
+    void DD_JcalS2D_MOSFET(double &JSn, double &JSp);
+    void DD_JcalD2D_MOSFET(double &JDn, double &JDp);
+    void DD_JcalB2D_MOSFET(double &JBn, double &JBp);
+
+    void DD_JcalS2D_ISFET(double &JSn, double &JSp);
+    void DD_JcalD2D_ISFET(double &JDn, double &JDp);
+    void DD_JcalB2D_ISFET(double &JBn, double &JBp);
+
+    void DD_Jcal3D();
+    void DD_Jcal3D_PN();
+    void DD_Jcal3D_MOSFET();
+    void DD_Jcal3D_ISFET();
+    void DD_Jcal3D_1NWR();
+    void DD_Jcal3D_2NWR();
+
+    void DD_JcalS3D_PN(double &JSn, double &JSp);
+    void DD_JcalD3D_PN(double &JDn, double &JDp);
+
+    void DD_JcalS3D_MOSFET(double &JSn, double &JSp);
+    void DD_JcalD3D_MOSFET(double &JDn, double &JDp);
+    void DD_JcalB3D_MOSFET(double &JBn, double &JBp);
+
+    void DD_JcalS3D_ISFET(double &JSn, double &JSp);
+    void DD_JcalD3D_ISFET(double &JDn, double &JDp);
+    void DD_JcalB3D_ISFET(double &JBn, double &JBp);
+
+    void DD_JcalS3D_NWR1(double &JSn, double &JSp); //NWR1
+    void DD_JcalD3D_NWR1(double &JDn, double &JDp);
+
+    void DD_JcalS3D_NWR2(double &JSn, double &JSp); //NWR2
+    void DD_JcalD3D_NWR2(double &JDn, double &JDp);
+
+    //Efield Calculations
+    void DD_EfieldCalculation2D();
+    void DD_EfieldCalculation3D();
+
+    //Space Charge Calculations
+    void DD_RhoCalculation2D();
+    void DD_RhoCalculation3D();
+
+    //Parameter Calculation
+    double DD_munCal(double T, double dopping, int f);
+    double DD_mupCal(double T,double dopping, int f);
+    double DD_tauNCal(double dopping);
+    double DD_tauPCal(double dopping);
+    double DD_SRHrecomb2D(int i, int j);
+    double DD_SRHrecomb3D(int i, int j, int k);
+
+    //Find NWR BC
+    void DD_FindNWRBC1();
+    void DD_FindNWRBC2();
 
     //Tool Function
-    double Bern(double, double);
-    void BernoulliX();
-    void DDInitialize();
+    double DD_Bern(double, double);
+    void DD_BernoulliX();
+    void DD_Initialize();
 
 protected:
 
@@ -224,23 +226,6 @@ protected:
     int NWRleft1=0,NWRright1=0,NWRtop1=0,NWRbottom1=0,NWRcenteryP1=0,NWRcenterzP1=0;
     int NWRleft2=0,NWRright2=0,NWRtop2=0,NWRbottom2=0,NWRcenteryP2=0,NWRcenterzP2=0;
     int DotNumber;
-
-    /*
-    int DD_loop,Kicking_loop,SubstrateTOP,ElectrolyteBottom;
-    int NWRleft,NWRright,NWRtop,NWRbottom,NWRcenterxP,NWRcenterzP;
-    int NWRleft2,NWRright2,NWRtop2,NWRbottom2,NWRcenterxP2,NWRcenterzP2;
-    double volS, volDe, volDs, volDi, volD, volB, volGe, volGs, volGi, volG, wfG;
-    double sbvn, sbvp;
-    double mun_semi, mup_semi, mun_sub, mup_sub;
-    double SimTolPoisson, SimTolEC, SimTolHC, SimTolElectron, maxIter;
-    double *PsiKick, *ErrorElectronNew, *ErrorElectronPre;
-    double *XFinal, *YFinal, *ZFinal;
-    double junction_depth, junction_length, tox_thickness;
-    double substrate_thickness, box_thickness, channel_thickness, electrolyte_thickness, channel_length;
-    double Lambda_D1, Lambda_D2, D_KCl, Omega, CDL, COxide, CTotal, Conductivity,CapLambda;
-    double mun_electrolyte, mup_electrolyte, C0, CC0;
-    int AnalyteNum;
-    */
 
 };
 

@@ -40,11 +40,11 @@ void CFD::CFD_NSParameter(){
      *Pressure:  kg/(nm s2)
      */
 
-    SimTolVelocity=1e-5;
-    SimTolPressure=1e-30;
-    SimTolPoisson=1e-6;
+    SimTolVelocity=1;
+    SimTolPressure=1e-35;
+    SimTolPoisson=5e-7;
 
-    MaxIter=10000;
+    MaxIter=20000;
 
     // alpha 0~1  pressure need more test.
     alphadP=1;
@@ -69,13 +69,13 @@ void CFD::CFD_NSParameter(){
     Lambda_D1=sqrt(80*e0*1e9*kb*Tamb/(q0*q0*Avogadro*2*CC0)); //[m]
     //Lambda_D2=sqrt(D_KCl*80*e0*1e9/Conductivity); //[m]
     cerr <<"Lambda_D1="<<Lambda_D1*1e9<<" [nm]"<<endl;
-    cerr <<"Lambda_D2="<<Lambda_D2*1e9<<" [nm]"<<endl;
+    //cerr <<"Lambda_D2="<<Lambda_D2*1e9<<" [nm]"<<endl;
     Lambda_D2=Lambda_D1; //[m]
 
 
     CDL=Water_permi*e0*1e9/Lambda_D2; //[F/m2]
-    COxide=3.9*e0*1e18/4;
-    CTotal=CDL*COxide/(CDL+COxide);
+    //COxide=3.9*e0*1e18/4;
+    //CTotal=CDL*COxide/(CDL+COxide);
 
 
     CharFreq=Conductivity*Lambda_D2/(50e-6*Water_permi*e0*1e9);
@@ -104,9 +104,6 @@ void CFD::CFD_NSInitialGuessComplex2D(){
      *All initial guess region setting should be using <= or >=,
      *and corresponding boundary condition should be using < or >
      */
-
-    u = new Vx [L];
-    v = new Vy [L];
 
     //u boundary guess , i wall
     // Two Electrode
@@ -150,10 +147,6 @@ void CFD::CFD_NSInitialGuessComplex3D(){
      *All initial guess region setting should be using <= or >=,
      *and corresponding boundary condition should be using < or >
      */
-
-    u = new Vx [L];
-    v = new Vy [L];
-    w = new Vz [L];
 
     //Giving Vx
     // Two Electrode
@@ -224,6 +217,15 @@ void CFD::CFD_NSInitialGuessComplex3D(){
     }
 }
 
+void CFD::CFD_NewAndInitialize(){
+
+    CFDmaterial = new CFDElectrolyte [L];
+    u = new Vx [L];
+    v = new Vy [L];
+    w = new Vz [L];
+
+    CFD_Initialize();
+}
 
 void CFD::CFD_SIMPLE2D(){
 
@@ -323,9 +325,9 @@ void CFD::CFD_SIMPLE2D(){
 
 
     CFD_VelocityCalculation2D();
-    CFD_PrintMaterialComplex2D("SIMPLE_P.dat");
-    CFD_PrintVx2D("SIMPLE_Vx.dat");
-    CFD_PrintVy2D("SIMPLE_Vy.dat");
+    CFD_PrintMaterialComplex2D("SIMPLE_P.txt");
+    CFD_PrintVx2D("SIMPLE_Vx.txt");
+    CFD_PrintVy2D("SIMPLE_Vy.txt");
 }
 
 void CFD::CFD_SIMPLER2D(){
@@ -416,20 +418,9 @@ void CFD::CFD_SIMPLER2D(){
         CFD_dVxCalculation2D();
         CFD_dVyCalculation2D();
 
-        if(NumIter<=10000){
-            if( NumIter==1|| NumIter==2 || NumIter==5  || NumIter==10  || NumIter==20 || NumIter==100 || NumIter==500 || NumIter%1000==0){
-                CFD_PrintVx2D(nameVx2.c_str());
-                CFD_PrintVy2D(nameVy2.c_str());
-                CFD_VelocityCalculation2D();
-                CFD_PrintMaterialComplex2D(nameP2.c_str());
-            }
-        }else{
-            if( NumIter%2000==0){
-                CFD_PrintVx2D(nameVx2.c_str());
-                CFD_PrintVy2D(nameVy2.c_str());
-                CFD_VelocityCalculation2D();
-                CFD_PrintMaterialComplex2D(nameP2.c_str());
-            }
+        if( NumIter==1|| NumIter==2 || NumIter==5  || NumIter==10  || NumIter==20 || NumIter==100 || NumIter==500 || NumIter%1000==0){
+            CFD_VelocityCalculation2D();
+            CFD_PrintVelocity2D(nameP2.c_str());
         }
 
         CFD_VxCorrection2D();
@@ -439,9 +430,7 @@ void CFD::CFD_SIMPLER2D(){
 
 
     CFD_VelocityCalculation2D();
-    CFD_PrintMaterialComplex2D("SIMPLE_P.dat");
-    CFD_PrintVx2D("SIMPLE_Vx.dat");
-    CFD_PrintVy2D("SIMPLE_Vy.dat");
+    CFD_PrintVelocity2D("SIMPLER_2D.txt");
 }
 
 void CFD::CFD_SIMPLER3D(){
@@ -2151,6 +2140,30 @@ void CFD::CFD_PrintVelocity3D(const char *path){
     output.close();
 }
 
+void CFD::CFD_PrintVelocity2D(const char *path){
+
+    fstream output;
+
+    output.open(path, fstream::out | fstream::trunc);
+
+    output.precision(6);
+
+
+    output << "X(1)\tY(2)\tui(3)\tvi(4)#"<<endl;
+    output << "[nm]\t[nm]\t[nm]\t#"<<endl;
+    output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            int pointer = (px)*(j) + (i);
+            output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t'
+                   << CFDmaterial[pointer].ui << '\t'<< CFDmaterial[pointer].vi <<endl;
+        }
+    }
+
+    output.close();
+}
+
 void CFD::CFD_PrintPotential3D(const char *path){
 
     fstream output;
@@ -2177,6 +2190,29 @@ void CFD::CFD_PrintPotential3D(const char *path){
     output.close();
 }
 
+void CFD::CFD_PrintPotential2D(const char *path){
+
+    fstream output;
+
+    output.open(path, fstream::out | fstream::trunc);
+
+    output.precision(6);
+
+
+    output << "X(1)\tY(2)\tReal(4)\tImg(5)#"<<endl;
+    output << "[nm]\t[nm]\t[nm]\t#"<<endl;
+    output <<"--------------------------------------------------------------------------------------------------------------------------------#" << endl;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            int pointer =(px)*(j) + (i);
+            output << mesh[pointer].coordX << '\t' << mesh[pointer].coordY << '\t'
+                   <<real(CFDmaterial[pointer].phi)<< '\t' <<imag(CFDmaterial[pointer].phi)<<endl;
+        }
+    }
+
+    output.close();
+}
 
 void CFD::CFD_ReadMaterialComplex2D(const char *path){
 
@@ -2301,7 +2337,74 @@ void CFD::CFD_ReadPotential3D(const char *path){
     input.close();
 }
 
-void CFD::CFD_MaxSpeed(){
+void CFD::CFD_ReadVelocity2D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            int pointer = (px)*(j) + (i);
+            input >> buffer >> buffer
+                  >> CFDmaterial[pointer].ui >> CFDmaterial[pointer].vi;
+        }
+    }
+
+    input.close();
+}
+
+void CFD::CFD_ReadPotential2D(const char *path){
+
+    fstream input;
+
+    input.open(path, fstream::in);
+
+    double buffer;
+    double R_real;
+    double R_imag;
+
+    // skip first 3 line
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+    input.ignore(256,'#');
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+            int pointer = (px)*(j) + (i);
+            input >> buffer >> buffer;
+            input >> R_real >> R_imag;
+            CFDmaterial[pointer].phi=complex<double> (R_real, R_imag);
+        }
+    }
+
+    input.close();
+}
+
+void CFD::CFD_MaxSpeed2D(){
+
+    double max=0;
+
+    for (int i=0;i<px;i++){
+        for (int j=0;j<py;j++){
+
+            int pointer = (px)*(j) + (i);
+            int temp = sqrt(pow(CFDmaterial[pointer].ui,2)+pow(CFDmaterial[pointer].vi,2));
+            if(temp > max)
+                max=temp;
+        }
+    }
+    cout << "MaxSpeed=" << max/1000 <<"um/s"<< endl;
+}
+
+void CFD::CFD_MaxSpeed3D(){
 
     double max=0;
 
@@ -2529,10 +2632,6 @@ void CFD::CFD_Initialize(){
 
 void CFD::CFD_ACPoissonInitialGuess2D(){
 
-    CFDmaterial = new CFDElectrolyte [L];
-
-    CFD_Initialize();
-
     //2D  Two Electrode
     for(int i=0;i<px;i++){
         int pointer1 =(px)*(0) + (i);
@@ -2566,10 +2665,6 @@ void CFD::CFD_ACPoissonInitialGuess2D(){
 }
 
 void CFD::CFD_ACPoissonInitialGuess3D(){
-
-    CFDmaterial = new CFDElectrolyte [L];
-
-    CFD_Initialize();
 
     //3D Two Electrode
     for(int i=0;i<px;i++){
@@ -2631,7 +2726,7 @@ double CFD::CFD_PoissonSolverComplex2D(){
         if(loop%10000==0)
             CFD_PrintMaterialComplex2D("Complex_temp.txt");
 
-        if(loop==20000)
+        if(loop==30000)
             break;
 
     }while(errPhi>SimTolPoisson);

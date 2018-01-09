@@ -30,31 +30,44 @@ public:
     void MC_ParticleTracingNew();
     void MC_ParticleTracingInitialize3D();
     void MC_ParticleTracingSimulation3D();
-
     void MC_DirectGenerateOnSurface();
+    void MC_Distribution (void);
 
-    int MC_ParticleTracing3DFindI(int dn, int tn);
-    int MC_ParticleTracing3DFindJ(int dn, int tn);
-    int MC_ParticleTracing3DFindK(int dn, int tn);
-
-    double MC_NormalDistribution();
-
-    void MC_StickBoundary(int i, int j);
-    void MC_RSABoundary(int i, int j);
-    void MC_FirstOrderBoundary(int i, int j);
-    void MC_FirstOrderBoundary_FiniteR(int i, int j);
-    void MC_FirstOrderBoundary_RSA1(int i, int j);
-    void MC_FirstOrderBoundary_RSA2(int i, int j);
-    int MC_FirstOrderFindI(int dn, int tn);
-    int MC_FirstOrderFindJ(int dn, int tn);
-    void MC_FirstOrderRelease(int i, int j);
-    void MC_FirstOrderRelease_FiniteR(int i, int j);
-
+private:
+    //Permutation
     double MC_factorial(double n);
     double MC_Ccomb(double m, double n);
     double MC_Pbinominal(double m, double n, double p);
     double MC_Hcomb(double m, double n);
-    void MC_Distribution (void);
+
+    //Random Number
+    double MC_NormalDistribution();
+
+    //Find IJ for First
+    int MC_BCFindI(int dn, int tn);
+    int MC_BCFindJ(int dn, int tn);
+    int MC_ParticleTracing3DFindI(int dn, int tn);
+    int MC_ParticleTracing3DFindJ(int dn, int tn);
+    int MC_ParticleTracing3DFindK(int dn, int tn);
+    int MC_ParticleTracing3DFindJ_In2DField(int dn, int tn);
+
+    //Capture release function
+    void MC_FirstOrderBoundary(int i, int j);
+    void MC_FirstOrderRelease(int i, int j);
+    void MC_FirstOrderBoundary_FiniteR(int i, int j);
+    void MC_FirstOrderRelease_FiniteR(int i, int j);
+
+    //Capture release area
+    void MC_StickBoundary_onSensor(int i, int j);
+    void MC_RSABoundary_onSensor(int i, int j);
+    void MC_FirstOrderBoundary_RSA_onSensor_BlockReceptor(int i, int j);
+    void MC_FirstOrderBoundary_RSA_onSensor_Cylindrical(int i, int j);
+
+    void MC_StickBoundary_BottomSurface(int i, int j);
+    void MC_RSABoundary_BottomSurface(int i, int j);
+
+    //I/O
+    void MC_PrintTrojactory(int tail);
 
 
 protected:
@@ -67,8 +80,9 @@ protected:
     target **Analyte;
     int *ParticleOnWire;
 
-    int TN, RL, DotN, Rpx, Rpy, ModeT, OutputTimeStep, OutputMoleculeNumber,WireN, OutputFrame;
+    int TN, RL, DotN, Rpx, Rpy, Mode,WireN,ModeT;
     int MaximumCaptureNumberRSA2;
+    int OutputTime, OutputMoleculeNumber, OutputTimeStepsPerFrame, ReportTimeSection;
     double t, tau, AnalyteRadius_m, AnalyteRadius_nm, AnalyteMass, AnalyteValence;
     double D, gamma, tauB, SigmaDist, SigmaForce, g, sigma, mean, Wb;
     double SensorWidth, SensorLength, ReceptorMesh;
