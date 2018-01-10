@@ -15,3 +15,6 @@ Brownian Motion Langevin Equation
 
 >>ACEO reference:
 Fluid flow induced by nonuniform ac electric fields in electrolytes on microelectrodes I-III
+
+>>Block Meshing reference:
+Block Meshing Explanation
