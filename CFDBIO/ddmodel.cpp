@@ -127,7 +127,7 @@ void DDmodel::DD_InitialGuessPNJunction2D(){
             int pointer = (px)*(j) + (i);
 
             //setup P+ Drain
-            //P+
+            //P
             DDmaterial[pointer].dop=-Nai;
             DDmaterial[pointer].phi=(volD-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
             DDmaterial[pointer].u=exp((-1)*volD/VT);
@@ -139,7 +139,7 @@ void DDmodel::DD_InitialGuessPNJunction2D(){
 
             //setup N+ Source
             if(mesh[pointer].coordX<lx/2){
-                //N+
+                //N
                 DDmaterial[pointer].dop=Ndi;
                 DDmaterial[pointer].phi=(volS+VT*log(0.5*Ndi+sqrt(pow(0.5*Ndi,2)+1)));
                 DDmaterial[pointer].u=exp((-1)*volS/VT);
@@ -167,8 +167,8 @@ void DDmodel::DD_InitialGuessMOSFET2D(){
 
             int pointer = (px)*(j) + (i);
 
-            //setup P+
-            //P+
+            //setup P
+            //P
             DDmaterial[pointer].dop=-Nai;
             DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
             DDmaterial[pointer].u=exp((-1)*volB/VT);
@@ -221,7 +221,7 @@ void DDmodel::DD_InitialGuessISFET2D(){
 
             //substrate
             if(mesh[pointer].coordY<=SubstrateThickness ){
-                //P+
+                //P
                 DDmaterial[pointer].Type=1;
                 DDmaterial[pointer].k=Si_permi;
                 DDmaterial[pointer].dop=-Nai;
@@ -370,8 +370,8 @@ void DDmodel::DD_InitialGuessPNJunction3D(){
 
                 int pointer = (py)*(px)*(k) + (px)*(j) + (i);
 
-                //setup P+ Drain
-                //P+
+                //setup P Drain
+                //P
                 DDmaterial[pointer].dop=-Nai;
                 DDmaterial[pointer].phi=(volD-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
                 DDmaterial[pointer].u=exp((-1)*volD/VT);
@@ -381,9 +381,9 @@ void DDmodel::DD_InitialGuessPNJunction3D(){
                 DDmaterial[pointer].tau=DD_tauPCal(0);
                 DDmaterial[pointer].r=DD_SRHrecomb2D(i,j);
 
-                //setup N+ Source
+                //setup N Source
                 if(mesh[pointer].coordX<lx/2){
-                    //N+
+                    //N
                     DDmaterial[pointer].dop=Ndi;
                     DDmaterial[pointer].phi=(volS+VT*log(0.5*Ndi+sqrt(pow(0.5*Ndi,2)+1)));
                     DDmaterial[pointer].u=exp((-1)*volS/VT);
@@ -415,8 +415,8 @@ void DDmodel::DD_InitialGuessMOSFET3D(){
 
                 int pointer = (py)*(px)*(k) + (px)*(j) + (i);
 
-                //setup P+
-                //P+
+                //setup P
+                //P
                 DDmaterial[pointer].dop=-Nai;
                 DDmaterial[pointer].phi=(volB-VT*log(0.5*Nai+sqrt(pow(0.5*Nai,2)+1)));
                 DDmaterial[pointer].u=exp((-1)*volB/VT);
@@ -471,7 +471,7 @@ void DDmodel::DD_InitialGuessISFET3D(){
 
                 //substrate
                 if(mesh[pointer].coordZ<=SubstrateThickness ){
-                    //P+
+                    //P
                     DDmaterial[pointer].Type=1;
                     DDmaterial[pointer].k=Si_permi;
                     DDmaterial[pointer].dop=-Nai;
@@ -2878,7 +2878,6 @@ void DDmodel::DD_Initialize(){
         DDmaterial[i].v=0;
     }
 }
-
 
 double DDmodel::DD_munCal(double T, double dopping, int f){
 
