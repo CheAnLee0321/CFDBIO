@@ -1,20 +1,20 @@
 # CFDBIO
 Computer Fluid Dynamic w/Biosensor
 
->CFD reference:
-An Introduction to CFD Finite volume method , Versteeg - 2nd Ed
+CFD 
+>Reference 1 : An Introduction to CFD Finite volume method , Versteeg - 2nd Ed
 
->DDmodel reference:
-Mathematical Modeling of Semiconductor Devices
+DDmodel 
+>Reference 2 : Mathematical Modeling of Semiconductor Devices
 
->Biosensor reference:
-Simulation study on discrete charge effects of SiNW biosensors using a 3D TCAD simulator
+Biosensor 
+>Reference 3 : Simulation study on discrete charge effects of SiNW biosensors using a 3D TCAD simulator
 
->Monte Carlo Simulation of Brownian Motion reference:
-Brownian Motion Langevin Equation
+Monte Carlo Simulation of Brownian Motion 
+>Reference 4 : Brownian Motion Langevin Equation
 
->ACEO reference:
-Fluid flow induced by nonuniform ac electric fields in electrolytes on microelectrodes I-III
+ACEO 
+>Reference 5 : Fluid flow induced by nonuniform ac electric fields in electrolytes on microelectrodes I-III
 
->Block Meshing reference:
-Block Meshing Explanation
+Block Meshing 
+>Reference 6 : Block Meshing Explanation
