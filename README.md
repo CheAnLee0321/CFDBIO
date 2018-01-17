@@ -1,5 +1,5 @@
 # CFDBIO
-Computer Fluid Dynamic w/Biosensor
+Computational Fluid Dynamics & Biosensor
 
 CFD 
 >Reference 1 : An Introduction to CFD Finite volume method , Versteeg - 2nd Ed
